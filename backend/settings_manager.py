@@ -1,5 +1,5 @@
 import json
-from database import get_all_settings, set_setting, get_setting
+from database import get_all_settings, set_setting, get_setting, DEFAULT_SETTINGS
 from scheduler import reload_digest_schedule, reload_fetch_schedule
 
 
@@ -31,15 +31,25 @@ async def get_settings_safe() -> dict:
     return result
 
 
+DEFAULT_SOURCES = json.loads(DEFAULT_SETTINGS["sources"])
+
+
 async def get_sources() -> list:
     raw = await get_setting("sources")
     if not raw:
-        return []
+        return DEFAULT_SOURCES
     try:
-        return json.loads(raw)
+        parsed = json.loads(raw)
+        # If somehow saved as empty, return defaults
+        if not parsed:
+            return DEFAULT_SOURCES
+        return parsed
     except Exception:
-        return []
+        return DEFAULT_SOURCES
 
 
 async def save_sources(sources: list):
+    # Never persist an empty list — fall back to defaults
+    if not sources:
+        sources = DEFAULT_SOURCES
     await set_setting("sources", json.dumps(sources))

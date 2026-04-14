@@ -3,6 +3,14 @@ import { api } from '../lib/api'
 import { useApp } from '../App'
 import { applyTheme } from '../lib/theme'
 
+const DEFAULT_SOURCES = [
+  { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/topNews', category: 'general', enabled: true },
+  { name: 'AP News', url: 'https://rsshub.app/apnews/topics/apf-topnews', category: 'general', enabled: true },
+  { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml', category: 'geopolitical', enabled: true },
+  { name: 'CNBC Energy', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19836768', category: 'energy', enabled: true },
+  { name: 'Bloomberg Markets', url: 'https://feeds.bloomberg.com/markets/news.rss', category: 'markets', enabled: true },
+]
+
 export default function Settings() {
   const { settings: ctxSettings, updateSettings } = useApp()
   const [local, setLocal] = useState({})
@@ -222,7 +230,12 @@ export default function Settings() {
               </div>
             ))}
           </div>
-          <button className="btn btn-accent" style={{ marginTop: 8 }} onClick={addSource}>+ ADD SOURCE</button>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button className="btn btn-accent" onClick={addSource}>+ ADD SOURCE</button>
+            <button className="btn" onClick={() => setSources(DEFAULT_SOURCES)}>
+              RESTORE DEFAULTS
+            </button>
+          </div>
         </Section>
 
         {/* Theme */}
