@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111118;
+  --bg-tertiary: #1a1a24;
+  --accent: #00d4ff;
+  --accent-dim: rgba(0, 212, 255, 0.15);
+  --text-primary: #e8e8f0;
+  --text-secondary: #888899;
+  --border: #1e1e2e;
+  --bullish: #00ff88;
+  --bearish: #ff3b3b;
+  --neutral: #888888;
+  --urgency-high: #ff6b00;
+  --urgency-medium: #f5c518;
+  --urgency-low: #888899;
+  --font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  width: 100vw;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 13px;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* Utilities */
+.text-accent { color: var(--accent); }
+.text-bullish { color: var(--bullish); }
+.text-bearish { color: var(--bearish); }
+.text-neutral-sig { color: var(--neutral); }
+.text-muted { color: var(--text-secondary); }
+.bg-primary { background: var(--bg-primary); }
+.bg-secondary { background: var(--bg-secondary); }
+.bg-tertiary { background: var(--bg-tertiary); }
+.border-sig { border-color: var(--border); }
+.border-accent { border-color: var(--accent); }
+
+.panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn-accent {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-accent:hover { background: var(--accent); color: var(--bg-primary); }
+.btn-danger { border-color: var(--bearish); color: var(--bearish); }
+.btn-danger:hover { background: var(--bearish); color: white; }
+
+.input-sig {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+.input-sig:focus { border-color: var(--accent); }
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid currentColor;
+}
+
+/* Conviction bar */
+.conviction-bar {
+  height: 3px;
+  background: var(--border);
+  position: relative;
+}
+.conviction-fill {
+  position: absolute;
+  top: 0; left: 0; height: 100%;
+  transition: width 0.3s;
+}
+
+/* Direction indicator */
+.dir-bullish { color: var(--bullish); }
+.dir-bearish { color: var(--bearish); }
+.dir-neutral { color: var(--neutral); }
+
+/* Card hover lift */
+.card-hover {
+  transition: border-color 0.15s, background 0.15s;
+  cursor: pointer;
+}
+.card-hover:hover {
+  border-color: var(--accent);
+  background: var(--bg-tertiary);
+}
+
+/* Pulse animation for live dot */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.pulse { animation: pulse 2s infinite; }
+
+/* Slide in animation for new articles */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.slide-in { animation: slideIn 0.3s ease; }
+
+/* Loading spinner */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.8s linear infinite; display: inline-block; }
+
+/* Collapsible */
+.collapsible-body {
+  overflow: hidden;
+  transition: max-height 0.2s ease;
+}

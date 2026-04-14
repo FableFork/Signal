@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  signal_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    volumes:
+      - signal_data:/data
+    environment:
+      - DB_PATH=/data/signal.db
+    restart: unless-stopped
+    networks:
+      - signal_net
+
+  signal_frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "${SIGNAL_PORT:-3000}:80"
+    depends_on:
+      - signal_backend
+    restart: unless-stopped
+    networks:
+      - signal_net
+
+volumes:
+  signal_data:
+
+networks:
+  signal_net:
+    driver: bridge
