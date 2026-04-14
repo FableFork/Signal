@@ -223,6 +223,52 @@ export default function ArticleReader() {
   )
 }
 
+const INSTRUMENT_NAMES = {
+  // Futures
+  'CL=F': 'Crude Oil WTI', 'BZ=F': 'Brent Crude', 'NG=F': 'Natural Gas',
+  'GC=F': 'Gold', 'SI=F': 'Silver', 'HG=F': 'Copper', 'PL=F': 'Platinum',
+  'PA=F': 'Palladium', 'ZW=F': 'Wheat', 'ZC=F': 'Corn', 'ZS=F': 'Soybeans',
+  'ZO=F': 'Oats', 'KC=F': 'Coffee', 'SB=F': 'Sugar', 'CT=F': 'Cotton',
+  'RB=F': 'RBOB Gasoline', 'HO=F': 'Heating Oil', 'LBS=F': 'Lumber',
+  'ES=F': 'S&P 500 Futures', 'NQ=F': 'Nasdaq Futures', 'YM=F': 'Dow Futures',
+  'RTY=F': 'Russell 2000 Futures', 'VX=F': 'VIX Futures',
+  // Forex
+  'EURUSD=X': 'EUR/USD', 'GBPUSD=X': 'GBP/USD', 'USDJPY=X': 'USD/JPY',
+  'USDCHF=X': 'USD/CHF', 'AUDUSD=X': 'AUD/USD', 'USDCAD=X': 'USD/CAD',
+  'NZDUSD=X': 'NZD/USD', 'USDCNH=X': 'USD/CNH', 'DX-Y.NYB': 'US Dollar Index',
+  'DXY': 'US Dollar Index',
+  // Crypto
+  'BTC-USD': 'Bitcoin', 'ETH-USD': 'Ethereum', 'BNB-USD': 'BNB',
+  'XRP-USD': 'XRP', 'SOL-USD': 'Solana',
+  // Major ETFs
+  'SPY': 'S&P 500 ETF', 'QQQ': 'Nasdaq 100 ETF', 'IWM': 'Russell 2000 ETF',
+  'DIA': 'Dow Jones ETF', 'TLT': 'Long-Term Treasury ETF', 'GLD': 'Gold ETF',
+  'SLV': 'Silver ETF', 'USO': 'Oil ETF', 'UNG': 'Natural Gas ETF',
+  'XLE': 'Energy Sector ETF', 'XLF': 'Financials ETF', 'XLK': 'Tech ETF',
+  'XLU': 'Utilities ETF', 'XLI': 'Industrials ETF', 'XLB': 'Materials ETF',
+  'XLP': 'Consumer Staples ETF', 'XLY': 'Consumer Disc. ETF', 'XLV': 'Healthcare ETF',
+  'EEM': 'Emerging Markets ETF', 'EFA': 'Developed Markets ETF',
+  'HYG': 'High Yield Bond ETF', 'LQD': 'Corp Bond ETF', 'TIP': 'TIPS ETF',
+  'VNQ': 'Real Estate ETF', 'IAU': 'Gold ETF (iShares)',
+  // Shipping / Energy stocks
+  'EURN': 'Euronav (Shipping)', 'FRO': 'Frontline (Tankers)',
+  'TNK': 'Teekay Tankers', 'DHT': 'DHT Holdings',
+  'XOM': 'ExxonMobil', 'CVX': 'Chevron', 'COP': 'ConocoPhillips',
+  'OXY': 'Occidental Petroleum', 'BP': 'BP plc', 'SHEL': 'Shell',
+  'TTE': 'TotalEnergies', 'ENB': 'Enbridge',
+  // Other common
+  'USOIL': 'Crude Oil (WTI)', 'UKOIL': 'Brent Crude',
+  '^VIX': 'VIX Volatility Index', '^TNX': '10-Year Treasury Yield',
+  '^TYX': '30-Year Treasury Yield', '^IRX': '13-Week T-Bill',
+  '^GSPC': 'S&P 500', '^DJI': 'Dow Jones', '^IXIC': 'Nasdaq Composite',
+  '^RUT': 'Russell 2000', '^FTSE': 'FTSE 100', '^N225': 'Nikkei 225',
+  '^HSI': 'Hang Seng', '^SSE': 'Shanghai Composite',
+}
+
+function instrumentName(ticker) {
+  return INSTRUMENT_NAMES[ticker] || INSTRUMENT_NAMES[ticker.toUpperCase()] || null
+}
+
 function AIResult({ ai, setTvSymbol }) {
   const dirColor = ai.direction === 'bullish' ? 'var(--bullish)'
     : ai.direction === 'bearish' ? 'var(--bearish)' : 'var(--neutral)'
@@ -280,16 +326,20 @@ function AIResult({ ai, setTvSymbol }) {
             Instruments
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {ai.instruments_affected.map((sym) => (
-              <button
-                key={sym}
-                className="btn btn-accent"
-                style={{ fontSize: 11 }}
-                onClick={() => setTvSymbol(sym)}
-              >
-                {sym} ↗
-              </button>
-            ))}
+            {ai.instruments_affected.map((sym) => {
+              const name = instrumentName(sym)
+              return (
+                <button
+                  key={sym}
+                  className="btn btn-accent"
+                  style={{ fontSize: 11, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '4px 10px' }}
+                  onClick={() => setTvSymbol(sym)}
+                >
+                  <span>{sym} ↗</span>
+                  {name && <span style={{ fontSize: 9, opacity: 0.7, fontWeight: 400 }}>{name}</span>}
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
