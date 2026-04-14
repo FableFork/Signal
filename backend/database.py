@@ -100,18 +100,6 @@ China demand data → Oil, Copper, Mining stocks
 Supply disruption → Commodity of that supply chain
 Geopolitical escalation → Gold (safe haven), Oil (if energy region)
 
-Use these exact ticker symbols for instruments_affected:
-Crude Oil WTI=CL=F, Brent Crude=BZ=F, Natural Gas=NG=F, Gold=GC=F, Silver=SI=F,
-Copper=HG=F, Wheat=ZW=F, Corn=ZC=F, Soybeans=ZS=F,
-S&P 500=ES=F, Nasdaq=NQ=F, Dow=YM=F, Russell 2000=RTY=F,
-EUR/USD=EURUSD=X, GBP/USD=GBPUSD=X, USD/JPY=USDJPY=X, USD/CHF=USDCHF=X,
-AUD/USD=AUDUSD=X, USD/CAD=USDCAD=X, USD/CNH=USDCNH=X, Dollar Index=DXY,
-Bitcoin=BTC-USD, Ethereum=ETH-USD,
-Energy ETF=XLE, S&P ETF=SPY, Nasdaq ETF=QQQ, Gold ETF=GLD, Oil ETF=USO,
-Long Bonds=TLT, VIX=^VIX, 10Y Yield=^TNX,
-ExxonMobil=XOM, Chevron=CVX, BP=BP, Shell=SHEL, ConocoPhillips=COP,
-Euronav=EURN, Frontline=FRO, Teekay Tankers=TNK
-
 Return ONLY valid JSON, no prose, no markdown, no preamble:
 {
 "instruments_affected": ["ticker1", "ticker2"],
