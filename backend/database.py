@@ -69,7 +69,7 @@ DEFAULT_SETTINGS = {
     "max_tokens": "2048",
     "conviction_threshold": "7",
     "min_reward_risk": "3.0",
-    "fetch_interval_seconds": "10",
+    "fetch_interval_seconds": "60",
     "digest_morning_time": "08:00",
     "digest_afternoon_time": "17:00",
     "digest_morning_enabled": "true",

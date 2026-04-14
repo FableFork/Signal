@@ -49,8 +49,8 @@ async def reload_digest_schedule():
 
 
 async def reload_fetch_schedule():
-    interval = int(await get_setting("fetch_interval_seconds") or "10")
-    interval = max(5, interval)  # minimum 5s
+    interval = int(await get_setting("fetch_interval_seconds") or "60")
+    interval = max(30, interval)  # minimum 30s — prevents overlap on slow hardware
     job_id = "news_fetch"
     if scheduler.get_job(job_id):
         scheduler.remove_job(job_id)
@@ -59,6 +59,9 @@ async def reload_fetch_schedule():
         IntervalTrigger(seconds=interval),
         id=job_id,
         replace_existing=True,
+        coalesce=True,           # if a run was missed, only fire once on catch-up
+        max_instances=1,         # never run two fetches simultaneously
+        misfire_grace_time=30,   # if a run fires late by under 30s, still execute it
     )
 
 
