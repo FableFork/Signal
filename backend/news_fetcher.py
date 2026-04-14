@@ -26,10 +26,42 @@ def _snippet(text: str, words: int = 15) -> str:
     return " ".join(parts[:words]) + ("..." if len(parts) > words else "")
 
 
+PAYWALL_SIGNALS = [
+    "are you a robot",
+    "unusual activity",
+    "please enable javascript",
+    "please enable cookies",
+    "verify you are human",
+    "access denied",
+    "subscribe to continue",
+    "subscribe now",
+    "this content is for subscribers",
+    "create a free account",
+    "sign in to read",
+    "log in to read",
+    "403 forbidden",
+    "cloudflare",
+    "just a moment",
+    "checking your browser",
+]
+
+
+def _is_blocked(text: str) -> bool:
+    lower = text.lower()
+    hits = sum(1 for s in PAYWALL_SIGNALS if s in lower)
+    # If 2+ paywall signals appear in a short text, it's a block page
+    return hits >= 2 or (hits >= 1 and len(text) < 1500)
+
+
 async def fetch_body(url: str, timeout: int = 8) -> str:
     try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+        }
         async with httpx.AsyncClient(follow_redirects=True, timeout=timeout) as client:
-            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+            resp = await client.get(url, headers=headers)
             soup = BeautifulSoup(resp.text, "html.parser")
             # Remove nav/header/footer/script/style
             for tag in soup(["script", "style", "nav", "header", "footer", "aside", "form"]):
@@ -41,8 +73,13 @@ async def fetch_body(url: str, timeout: int = 8) -> str:
                 if el:
                     text = el.get_text(separator=" ", strip=True)
                     if len(text) > 200:
+                        if _is_blocked(text):
+                            return ""
                         return text[:3000]
-            return soup.get_text(separator=" ", strip=True)[:3000]
+            full = soup.get_text(separator=" ", strip=True)
+            if _is_blocked(full):
+                return ""
+            return full[:3000]
     except Exception:
         return ""
 

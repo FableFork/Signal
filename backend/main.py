@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from database import init_db, DB_PATH, get_setting, set_setting, purge_old_articles
 from websocket_manager import ws_manager
-from news_fetcher import run_fetch_cycle, get_article_body_full
+from news_fetcher import run_fetch_cycle, get_article_body_full, _is_blocked
 from ai_analyzer import analyze_article
 from daily_digest import generate_digest, get_digest, list_digest_dates
 from scheduler import start_scheduler
@@ -112,8 +112,9 @@ async def get_article(article_id: int):
         raise HTTPException(404, "Article not found")
 
     art = dict(row)
-    # Fetch body from URL if missing
-    if not art.get("body") and art.get("url"):
+    # Fetch body from URL if missing or if stored body is a paywall/bot-detection page
+    stored_body = art.get("body") or ""
+    if (not stored_body or _is_blocked(stored_body)) and art.get("url"):
         body = await get_article_body_full(art["url"])
         art["body"] = body
         async with aiosqlite.connect(DB_PATH) as db:
@@ -156,7 +157,7 @@ async def run_analysis(article_id: int, bg: BackgroundTasks):
 
     art = dict(row)
     body = art.get("body") or ""
-    if not body and art.get("url"):
+    if (not body or _is_blocked(body)) and art.get("url"):
         body = await get_article_body_full(art["url"])
 
     result = await analyze_article(art["guid"], art["title"], body)
