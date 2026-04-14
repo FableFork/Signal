@@ -69,7 +69,7 @@ async def get_articles(
     if since_hours:
         from datetime import timedelta
         cutoff = (datetime.utcnow() - timedelta(hours=since_hours)).isoformat()
-        filters.append("fetched_at >= ?")
+        filters.append("published_at >= ?")
         params.append(cutoff)
     if keyword:
         filters.append("(title LIKE ? OR snippet LIKE ?)")
@@ -84,7 +84,7 @@ async def get_articles(
             f"""SELECT id, guid, source_name, category, title, url, published_at,
                        fetched_at, snippet, read, tag
                 FROM articles WHERE {where}
-                ORDER BY fetched_at DESC LIMIT ? OFFSET ?""",
+                ORDER BY published_at DESC LIMIT ? OFFSET ?""",
             params
         ) as cur:
             rows = await cur.fetchall()
