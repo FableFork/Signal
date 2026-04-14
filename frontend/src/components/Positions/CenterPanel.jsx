@@ -1,9 +1,19 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useApp } from '../../App'
 import Positions from './Positions'
 import Calculator from '../Calculator/Calculator'
+import ArticleReader from '../SignalFeed/ArticleReader'
 
 export default function CenterPanel() {
-  const [tab, setTab] = useState('positions')
+  const [tab, setTab] = useState('reader')
+  const { selectedArticle } = useApp()
+
+  // Auto-switch to reader when an article is selected
+  useEffect(() => {
+    if (selectedArticle) setTab('reader')
+  }, [selectedArticle])
+
+  const tabs = ['reader', 'positions', 'calculator']
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -14,7 +24,7 @@ export default function CenterPanel() {
         background: 'var(--bg-secondary)',
         flexShrink: 0,
       }}>
-        {['positions', 'calculator'].map((t) => (
+        {tabs.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -40,6 +50,7 @@ export default function CenterPanel() {
 
       {/* Panel */}
       <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+        {tab === 'reader' && <ArticleReader />}
         {tab === 'positions' && <Positions />}
         {tab === 'calculator' && <Calculator />}
       </div>

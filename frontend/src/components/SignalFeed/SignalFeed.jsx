@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { api } from '../../lib/api'
 import { useApp } from '../../App'
-import ArticleModal from './ArticleModal'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 dayjs.extend(relativeTime)
@@ -16,10 +15,9 @@ const CATEGORY_COLORS = {
 }
 
 export default function SignalFeed() {
-  const { onNewArticle, offNewArticle, refreshUnread } = useApp()
+  const { onNewArticle, offNewArticle, refreshUnread, setSelectedArticle } = useApp()
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selected, setSelected] = useState(null)
   const [filter, setFilter] = useState({ source: '', since_hours: '', keyword: '' })
   const [hover, setHover] = useState(null)
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
@@ -57,7 +55,7 @@ export default function SignalFeed() {
   const sources = [...new Set(articles.map((a) => a.source_name).filter(Boolean))]
 
   const handleCardClick = (article) => {
-    setSelected(article)
+    setSelectedArticle(article)
     refreshUnread()
   }
 
@@ -146,13 +144,6 @@ export default function SignalFeed() {
         <HoverPane article={hover} pos={hoverPos} />
       )}
 
-      {/* Article modal */}
-      {selected && (
-        <ArticleModal
-          article={selected}
-          onClose={() => setSelected(null)}
-        />
-      )}
     </div>
   )
 }

@@ -55,6 +55,7 @@ export default function App() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [tvSymbol, setTvSymbol] = useState('')
   const [tvInterval, setTvInterval] = useState('D')
+  const [selectedArticle, setSelectedArticle] = useState(null)
   const articleListeners = useRef([])
 
   // Load settings on mount
@@ -109,6 +110,7 @@ export default function App() {
     wsConnected: connected,
     onNewArticle, offNewArticle,
     tab, setTab,
+    selectedArticle, setSelectedArticle,
   }
 
   return (
