@@ -29,15 +29,25 @@ async function req(path, opts = {}) {
   return res.json()
 }
 
+// Auth endpoints don't carry a session token and must NOT trigger logout on 401
+// (a 401 from login just means wrong password, not an expired session)
+async function authPost(path, body) {
+  const res = await fetch(BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  let data
+  try { data = await res.json() } catch { data = {} }
+  if (!res.ok) throw new Error(data.detail || data.message || res.statusText)
+  return data
+}
+
 export const api = {
   // Auth
   authStatus: () => fetch(BASE + '/auth/status').then(r => r.json()),
-  login: (username, password) => req('/auth/login', {
-    method: 'POST', body: JSON.stringify({ username, password })
-  }),
-  register: (username, password) => req('/auth/register', {
-    method: 'POST', body: JSON.stringify({ username, password })
-  }),
+  login: (username, password) => authPost('/auth/login', { username, password }),
+  register: (username, password) => authPost('/auth/register', { username, password }),
   me: () => req('/auth/me'),
   setApiKey: (api_key) => req('/auth/api-key', {
     method: 'POST', body: JSON.stringify({ api_key })
