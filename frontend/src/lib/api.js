@@ -63,6 +63,11 @@ export const api = {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''))
     return req(`/globe/data?${qs}`)
   },
+  getInfrastructure: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''))
+    return req(`/globe/infrastructure?${qs}`)
+  },
+  refreshInfrastructure: () => req('/globe/infrastructure/refresh', { method: 'POST' }),
 
   // Data
   purgeData: () => req('/data/purge', { method: 'POST' }),

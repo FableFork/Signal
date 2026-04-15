@@ -15,6 +15,7 @@ from database import (
     mark_article_read, set_article_tag,
     purge_old_articles,
 )
+from infrastructure_fetcher import run_infrastructure_refresh
 from websocket_manager import ws_manager
 from news_fetcher import run_fetch_cycle, get_article_body_full, _is_blocked
 from ai_analyzer import analyze_article
@@ -32,6 +33,12 @@ UID = 1  # Single-user mode — all data belongs to user 1
 async def lifespan(app: FastAPI):
     await init_db()
     await start_scheduler()
+    # Seed infrastructure on first run (if table is empty)
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("SELECT COUNT(*) FROM infrastructure_features") as cur:
+            count = (await cur.fetchone())[0]
+    if count == 0:
+        asyncio.create_task(run_infrastructure_refresh())
     yield
 
 
@@ -417,6 +424,48 @@ async def globe_data(since_hours: int = 48):
             "locations_affected": ai.get("locations_affected", []),
         })
     return results
+
+
+# ─── Infrastructure ───────────────────────────────────────────────────────────
+
+@app.get("/api/globe/infrastructure")
+async def get_infrastructure(
+    feature_types: Optional[str] = None,
+    min_influence: int = 1,
+    limit: int = 2000,
+):
+    """Return infrastructure features from DB, optionally filtered by type and influence."""
+    filters = ["influence >= ?"]
+    params: list = [min_influence]
+
+    if feature_types:
+        types = [t.strip() for t in feature_types.split(',') if t.strip()]
+        if types:
+            placeholders = ','.join('?' * len(types))
+            filters.append(f"feature_type IN ({placeholders})")
+            params.extend(types)
+
+    where = ' AND '.join(filters)
+    params.append(limit)
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            f"SELECT id, osm_id, feature_type, name, country, operator, "
+            f"geometry_type, lat, lng, geometry_json, influence, capacity_note, fetched_at "
+            f"FROM infrastructure_features WHERE {where} ORDER BY influence DESC LIMIT ?",
+            params
+        ) as cur:
+            rows = await cur.fetchall()
+
+    return [dict(r) for r in rows]
+
+
+@app.post("/api/globe/infrastructure/refresh")
+async def refresh_infrastructure(background_tasks: BackgroundTasks):
+    """Trigger a fresh Overpass data pull in the background."""
+    background_tasks.add_task(run_infrastructure_refresh)
+    return {"ok": True, "message": "Infrastructure refresh started in background"}
 
 
 # ─── Settings ─────────────────────────────────────────────────────────────────

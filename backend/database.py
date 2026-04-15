@@ -90,6 +90,26 @@ CREATE TABLE IF NOT EXISTS system_settings (
     key TEXT PRIMARY KEY,
     value TEXT
 );
+
+CREATE TABLE IF NOT EXISTS infrastructure_features (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    osm_id TEXT UNIQUE NOT NULL,
+    feature_type TEXT,
+    name TEXT,
+    country TEXT,
+    operator TEXT,
+    geometry_type TEXT,
+    lat REAL,
+    lng REAL,
+    geometry_json TEXT,
+    influence INTEGER DEFAULT 5,
+    capacity_note TEXT,
+    tags_json TEXT,
+    fetched_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_infra_feature_type ON infrastructure_features(feature_type);
+CREATE INDEX IF NOT EXISTS idx_infra_influence ON infrastructure_features(influence);
 """
 
 # Defaults applied to each new user

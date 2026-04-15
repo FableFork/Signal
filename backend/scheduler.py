@@ -5,6 +5,7 @@ import pytz
 from database import get_system_setting, get_all_user_ids
 from news_fetcher import run_fetch_cycle
 from daily_digest import generate_digest
+from infrastructure_fetcher import run_infrastructure_refresh
 
 scheduler = AsyncIOScheduler()
 
@@ -16,6 +17,10 @@ async def _run_digest():
 
 async def _run_fetch():
     await run_fetch_cycle()
+
+
+async def _run_infrastructure_refresh():
+    await run_infrastructure_refresh()
 
 
 async def reload_digest_schedule():
@@ -55,3 +60,14 @@ async def start_scheduler():
         scheduler.start()
     await reload_digest_schedule()
     await reload_fetch_schedule()
+
+    # Weekly infrastructure refresh — every Sunday at 03:00 Dubai time
+    tz = pytz.timezone("Asia/Dubai")
+    scheduler.add_job(
+        _run_infrastructure_refresh,
+        CronTrigger(day_of_week='sun', hour=3, minute=0, timezone=tz),
+        id="infra_refresh",
+        replace_existing=True,
+        coalesce=True,
+        max_instances=1,
+    )

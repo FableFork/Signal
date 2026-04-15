@@ -341,6 +341,24 @@ export default function Settings() {
                 onChange={(v) => set(key, v)} />
             ))}
           </div>
+          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              className="btn"
+              onClick={async () => {
+                try {
+                  await api.refreshInfrastructure()
+                  alert('Infrastructure refresh started. Data will update in the background (~10 min).')
+                } catch (e) {
+                  alert('Refresh failed: ' + e.message)
+                }
+              }}
+            >
+              REFRESH INFRASTRUCTURE DATA
+            </button>
+            <span style={{ color: 'var(--text-secondary)', fontSize: 11 }}>
+              Re-fetches energy, mining & agriculture sites from OpenStreetMap
+            </span>
+          </div>
         </Section>
 
         {/* TradingView */}
