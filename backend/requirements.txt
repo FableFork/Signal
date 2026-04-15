@@ -10,5 +10,3 @@ apscheduler==3.10.4
 python-multipart==0.0.9
 aiosqlite==0.20.0
 pytz==2024.1
-python-jose[cryptography]==3.3.0
-bcrypt==4.1.3

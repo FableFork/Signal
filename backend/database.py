@@ -211,7 +211,16 @@ async def init_db():
                 "INSERT OR IGNORE INTO system_settings (key, value) VALUES (?, ?)",
                 (key, value)
             )
+
+        # Ensure the single default user (id=1) always exists
+        await db.execute(
+            "INSERT OR IGNORE INTO users (id, username, password_hash, created_at) VALUES (1, 'signal', '', ?)",
+            (datetime.utcnow().isoformat(),)
+        )
         await db.commit()
+
+    # Seed default settings for user 1 (fills in any missing keys)
+    await seed_user_settings(1, USER_SETTING_DEFAULTS)
 
 
 # ─── System settings ──────────────────────────────────────────────────────────

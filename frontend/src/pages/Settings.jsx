@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import { useApp } from '../App'
 import { applyTheme } from '../lib/theme'
@@ -12,48 +12,17 @@ const DEFAULT_SOURCES = [
 ]
 
 export default function Settings() {
-  const { settings: ctxSettings, updateSettings, user } = useApp()
+  const { settings: ctxSettings, updateSettings } = useApp()
   const [local, setLocal] = useState({})
   const [sources, setSources] = useState([])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [testResults, setTestResults] = useState({})
-  const [myApiKey, setMyApiKey] = useState('')
-  const [apiKeySaved, setApiKeySaved] = useState(false)
-  const [oldPassword, setOldPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [pwMsg, setPwMsg] = useState(null)
 
   useEffect(() => {
     api.getSettings().then((s) => setLocal(s)).catch(() => {})
     api.getSources().then((s) => setSources(s)).catch(() => {})
-    api.me().then((u) => { if (u.has_api_key) setMyApiKey('***') }).catch(() => {})
   }, [])
-
-  const saveMyApiKey = async () => {
-    if (!myApiKey || myApiKey === '***') return
-    try {
-      await api.setApiKey(myApiKey)
-      setMyApiKey('***')
-      setApiKeySaved(true)
-      setTimeout(() => setApiKeySaved(false), 2000)
-    } catch (e) {
-      alert(e.message)
-    }
-  }
-
-  const changePassword = async () => {
-    if (!newPassword || newPassword.length < 6) return setPwMsg({ error: 'Min 6 characters' })
-    try {
-      await api.changePassword(oldPassword, newPassword)
-      setOldPassword('')
-      setNewPassword('')
-      setPwMsg({ ok: 'Password changed' })
-      setTimeout(() => setPwMsg(null), 3000)
-    } catch (e) {
-      setPwMsg({ error: e.message })
-    }
-  }
 
   const set = (key, val) => {
     setLocal((prev) => {
@@ -130,22 +99,9 @@ export default function Settings() {
         <Section title="AI SETTINGS">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div style={{ gridColumn: '1 / -1' }}>
-              <Label>MY API KEY <span style={{ fontWeight: 400, opacity: 0.6 }}>(used for your analysis requests)</span></Label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input className="input-sig" type="password" placeholder="sk-ant-..."
-                  style={{ flex: 1 }}
-                  value={myApiKey === '***' ? '' : myApiKey}
-                  onChange={(e) => setMyApiKey(e.target.value)}
-                />
-                <button className="btn btn-accent" style={{ fontSize: 11 }} onClick={saveMyApiKey}>
-                  {apiKeySaved ? '✓ SAVED' : 'SAVE'}
-                </button>
-              </div>
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <Label>GLOBAL API KEY <span style={{ fontWeight: 400, opacity: 0.6 }}>(used for background tasks — digest, auto-fetch)</span></Label>
+              <Label>ANTHROPIC API KEY</Label>
               <input className="input-sig" type="password" placeholder="sk-ant-..."
-                value={local.anthropic_api_key === '***' ? '' : (local.anthropic_api_key || '')}
+                value={local.anthropic_api_key || ''}
                 onChange={(e) => set('anthropic_api_key', e.target.value)} />
             </div>
             <div>
@@ -414,43 +370,6 @@ export default function Settings() {
                 if (confirm('Clear old articles now?')) await api.purgeData()
               }}>
                 CLEAR OLD DATA
-              </button>
-            </div>
-          </div>
-        </Section>
-
-        {/* Account */}
-        <Section title="ACCOUNT">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div>
-              <Label>USERNAME</Label>
-              <div style={{ fontSize: 12, color: 'var(--text-primary)', padding: '6px 0' }}>{user?.username}</div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div>
-                <Label>CURRENT PASSWORD</Label>
-                <input className="input-sig" type="password" placeholder="••••••••"
-                  value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} />
-              </div>
-              <div>
-                <Label>NEW PASSWORD</Label>
-                <input className="input-sig" type="password" placeholder="••••••••"
-                  value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-              </div>
-            </div>
-            {pwMsg && (
-              <div style={{
-                fontSize: 11, padding: '6px 10px',
-                background: pwMsg.error ? 'rgba(255,59,59,0.1)' : 'rgba(0,255,136,0.1)',
-                border: `1px solid ${pwMsg.error ? 'var(--bearish)' : 'var(--bullish)'}`,
-                color: pwMsg.error ? 'var(--bearish)' : 'var(--bullish)',
-              }}>
-                {pwMsg.error || pwMsg.ok}
-              </div>
-            )}
-            <div>
-              <button className="btn btn-accent" style={{ fontSize: 11 }} onClick={changePassword}>
-                CHANGE PASSWORD
               </button>
             </div>
           </div>

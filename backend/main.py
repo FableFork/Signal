@@ -6,15 +6,14 @@ from typing import Optional
 
 import aiosqlite
 import yfinance as yf
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks, Depends
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from database import (
     init_db, DB_PATH, get_system_setting,
-    get_user_setting, set_user_setting,
     mark_article_read, set_article_tag,
-    purge_old_articles, count_users
+    purge_old_articles,
 )
 from websocket_manager import ws_manager
 from news_fetcher import run_fetch_cycle, get_article_body_full, _is_blocked
@@ -25,9 +24,8 @@ from settings_manager import (
     update_user_setting_safe, get_settings_safe,
     get_user_sources, save_user_sources
 )
-from auth import (
-    hash_password, verify_password, create_token, get_current_user
-)
+
+UID = 1  # Single-user mode — all data belongs to user 1
 
 
 @asynccontextmanager
@@ -45,87 +43,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# ─── Auth ─────────────────────────────────────────────────────────────────────
-
-class AuthBody(BaseModel):
-    username: str
-    password: str
-
-
-@app.get("/api/auth/status")
-async def auth_status():
-    n = await count_users()
-    return {"has_users": n > 0}
-
-
-@app.post("/api/auth/register")
-async def register(body: AuthBody):
-    if not body.username.strip() or not body.password:
-        raise HTTPException(400, "Username and password required")
-    hashed = hash_password(body.password)
-    now = datetime.utcnow().isoformat()
-    try:
-        async with aiosqlite.connect(DB_PATH) as db:
-            cur = await db.execute(
-                "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
-                (body.username.strip(), hashed, now)
-            )
-            await db.commit()
-            user_id = cur.lastrowid
-    except Exception:
-        raise HTTPException(400, "Username already taken")
-    token = create_token(user_id)
-    return {"token": token, "user": {"id": user_id, "username": body.username.strip()}}
-
-
-@app.post("/api/auth/login")
-async def login(body: AuthBody):
-    async with aiosqlite.connect(DB_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute(
-            "SELECT * FROM users WHERE username=?", (body.username.strip(),)
-        ) as cur:
-            row = await cur.fetchone()
-    if not row or not verify_password(body.password, row["password_hash"]):
-        raise HTTPException(401, "Invalid username or password")
-    token = create_token(row["id"])
-    return {"token": token, "user": {"id": row["id"], "username": row["username"]}}
-
-
-@app.get("/api/auth/me")
-async def me(current_user: dict = Depends(get_current_user)):
-    api_key = await get_user_setting(current_user["id"], "anthropic_api_key")
-    return {**current_user, "has_api_key": bool(api_key)}
-
-
-@app.post("/api/auth/api-key")
-async def set_api_key(body: dict, current_user: dict = Depends(get_current_user)):
-    key = body.get("api_key", "")
-    await set_user_setting(current_user["id"], "anthropic_api_key", key)
-    return {"ok": True}
-
-
-@app.post("/api/auth/change-password")
-async def change_password(body: dict, current_user: dict = Depends(get_current_user)):
-    old_pw = body.get("old_password", "")
-    new_pw = body.get("new_password", "")
-    if not new_pw or len(new_pw) < 6:
-        raise HTTPException(400, "New password must be at least 6 characters")
-    async with aiosqlite.connect(DB_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT password_hash FROM users WHERE id=?", (current_user["id"],)) as cur:
-            row = await cur.fetchone()
-    if not row or not verify_password(old_pw, row["password_hash"]):
-        raise HTTPException(401, "Current password is incorrect")
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
-            "UPDATE users SET password_hash=? WHERE id=?",
-            (hash_password(new_pw), current_user["id"])
-        )
-        await db.commit()
-    return {"ok": True}
 
 
 # ─── WebSocket ────────────────────────────────────────────────────────────────
@@ -149,14 +66,11 @@ async def get_articles(
     source: Optional[str] = None,
     since_hours: Optional[int] = None,
     keyword: Optional[str] = None,
-    current_user: dict = Depends(get_current_user),
 ):
-    uid = current_user["id"]
     filters = ["1=1"]
-    params = [uid]
+    params = [UID]
 
-    # Filter to user's enabled sources
-    user_sources = await get_user_sources(uid)
+    user_sources = await get_user_sources(UID)
     enabled_names = [s["name"] for s in user_sources if s.get("enabled", True)]
     if enabled_names:
         placeholders = ",".join("?" * len(enabled_names))
@@ -197,9 +111,8 @@ async def get_articles(
 
 
 @app.get("/api/articles/unread/count")
-async def unread_count(current_user: dict = Depends(get_current_user)):
-    uid = current_user["id"]
-    user_sources = await get_user_sources(uid)
+async def unread_count():
+    user_sources = await get_user_sources(UID)
     enabled_names = [s["name"] for s in user_sources if s.get("enabled", True)]
 
     async with aiosqlite.connect(DB_PATH) as db:
@@ -209,7 +122,7 @@ async def unread_count(current_user: dict = Depends(get_current_user)):
                 f"""SELECT COUNT(*) FROM articles a
                     LEFT JOIN user_article_states uas ON a.id = uas.article_id AND uas.user_id = ?
                     WHERE a.source_name IN ({placeholders}) AND COALESCE(uas.read, 0) = 0""",
-                [uid] + enabled_names
+                [UID] + enabled_names
             ) as cur:
                 row = await cur.fetchone()
         else:
@@ -217,15 +130,14 @@ async def unread_count(current_user: dict = Depends(get_current_user)):
                 """SELECT COUNT(*) FROM articles a
                    LEFT JOIN user_article_states uas ON a.id = uas.article_id AND uas.user_id = ?
                    WHERE COALESCE(uas.read, 0) = 0""",
-                (uid,)
+                (UID,)
             ) as cur:
                 row = await cur.fetchone()
     return {"count": row[0]}
 
 
 @app.get("/api/articles/{article_id}")
-async def get_article(article_id: int, current_user: dict = Depends(get_current_user)):
-    uid = current_user["id"]
+async def get_article(article_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
@@ -233,7 +145,7 @@ async def get_article(article_id: int, current_user: dict = Depends(get_current_
                FROM articles a
                LEFT JOIN user_article_states uas ON a.id = uas.article_id AND uas.user_id = ?
                WHERE a.id=?""",
-            (uid, article_id)
+            (UID, article_id)
         ) as cur:
             row = await cur.fetchone()
     if not row:
@@ -248,7 +160,7 @@ async def get_article(article_id: int, current_user: dict = Depends(get_current_
             await db.execute("UPDATE articles SET body=? WHERE id=?", (body, article_id))
             await db.commit()
 
-    await mark_article_read(uid, article_id)
+    await mark_article_read(UID, article_id)
     art["read"] = 1
 
     async with aiosqlite.connect(DB_PATH) as db:
@@ -262,15 +174,14 @@ async def get_article(article_id: int, current_user: dict = Depends(get_current_
 
 
 @app.post("/api/articles/{article_id}/tag")
-async def tag_article(article_id: int, body: dict, current_user: dict = Depends(get_current_user)):
+async def tag_article(article_id: int, body: dict):
     tag = body.get("tag")
-    await set_article_tag(current_user["id"], article_id, tag)
+    await set_article_tag(UID, article_id, tag)
     return {"ok": True}
 
 
 @app.post("/api/articles/{article_id}/analyze")
-async def run_analysis(article_id: int, bg: BackgroundTasks, current_user: dict = Depends(get_current_user)):
-    uid = current_user["id"]
+async def run_analysis(article_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute("SELECT * FROM articles WHERE id=?", (article_id,)) as cur:
@@ -283,7 +194,7 @@ async def run_analysis(article_id: int, bg: BackgroundTasks, current_user: dict 
     if (not body or _is_blocked(body)) and art.get("url"):
         body = await get_article_body_full(art["url"])
 
-    result = await analyze_article(art["guid"], art["title"], body, user_id=uid)
+    result = await analyze_article(art["guid"], art["title"], body, user_id=UID)
     return result
 
 
@@ -301,19 +212,18 @@ class PositionIn(BaseModel):
 
 
 @app.get("/api/positions")
-async def get_positions(current_user: dict = Depends(get_current_user)):
+async def get_positions():
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
-            "SELECT * FROM positions WHERE user_id=? ORDER BY created_at DESC",
-            (current_user["id"],)
+            "SELECT * FROM positions WHERE user_id=? ORDER BY created_at DESC", (UID,)
         ) as cur:
             rows = await cur.fetchall()
     return [dict(r) for r in rows]
 
 
 @app.post("/api/positions")
-async def create_position(pos: PositionIn, current_user: dict = Depends(get_current_user)):
+async def create_position(pos: PositionIn):
     now = datetime.utcnow().isoformat()
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute(
@@ -321,7 +231,7 @@ async def create_position(pos: PositionIn, current_user: dict = Depends(get_curr
                (user_id, instrument, direction, entry_price, size, stop_loss, take_profit,
                 open_date, notes, created_at)
                VALUES (?,?,?,?,?,?,?,?,?,?)""",
-            (current_user["id"], pos.instrument, pos.direction, pos.entry_price, pos.size,
+            (UID, pos.instrument, pos.direction, pos.entry_price, pos.size,
              pos.stop_loss, pos.take_profit, pos.open_date, pos.notes, now)
         )
         await db.commit()
@@ -330,18 +240,15 @@ async def create_position(pos: PositionIn, current_user: dict = Depends(get_curr
 
 
 @app.delete("/api/positions/{pos_id}")
-async def delete_position(pos_id: int, current_user: dict = Depends(get_current_user)):
+async def delete_position(pos_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
-            "DELETE FROM positions WHERE id=? AND user_id=?",
-            (pos_id, current_user["id"])
-        )
+        await db.execute("DELETE FROM positions WHERE id=? AND user_id=?", (pos_id, UID))
         await db.commit()
     return {"ok": True}
 
 
 @app.put("/api/positions/{pos_id}")
-async def update_position(pos_id: int, pos: PositionIn, current_user: dict = Depends(get_current_user)):
+async def update_position(pos_id: int, pos: PositionIn):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             """UPDATE positions SET instrument=?, direction=?, entry_price=?,
@@ -349,7 +256,7 @@ async def update_position(pos_id: int, pos: PositionIn, current_user: dict = Dep
                WHERE id=? AND user_id=?""",
             (pos.instrument, pos.direction, pos.entry_price, pos.size,
              pos.stop_loss, pos.take_profit, pos.open_date, pos.notes,
-             pos_id, current_user["id"])
+             pos_id, UID)
         )
         await db.commit()
     return {"ok": True}
@@ -358,7 +265,7 @@ async def update_position(pos_id: int, pos: PositionIn, current_user: dict = Dep
 # ─── Price Data ───────────────────────────────────────────────────────────────
 
 @app.get("/api/price/{symbol}")
-async def get_price(symbol: str, current_user: dict = Depends(get_current_user)):
+async def get_price(symbol: str):
     try:
         ticker = yf.Ticker(symbol)
         price = None
@@ -382,49 +289,46 @@ async def get_price(symbol: str, current_user: dict = Depends(get_current_user))
 # ─── Saved Calculations ───────────────────────────────────────────────────────
 
 @app.get("/api/calculations")
-async def get_calculations(current_user: dict = Depends(get_current_user)):
+async def get_calculations():
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
-            "SELECT * FROM saved_calculations WHERE user_id=? ORDER BY created_at DESC",
-            (current_user["id"],)
+            "SELECT * FROM saved_calculations WHERE user_id=? ORDER BY created_at DESC", (UID,)
         ) as cur:
             rows = await cur.fetchall()
     return [dict(r) for r in rows]
 
 
 @app.post("/api/calculations")
-async def save_calculation(body: dict, current_user: dict = Depends(get_current_user)):
+async def save_calculation(body: dict):
     name = body.get("name", "")
     if not name:
         raise HTTPException(400, "Name required")
-    uid = current_user["id"]
     now = datetime.utcnow().isoformat()
     async with aiosqlite.connect(DB_PATH) as db:
         existing = await db.execute(
-            "SELECT id FROM saved_calculations WHERE user_id=? AND name=?", (uid, name)
+            "SELECT id FROM saved_calculations WHERE user_id=? AND name=?", (UID, name)
         )
         row = await existing.fetchone()
         if row:
             await db.execute(
                 "UPDATE saved_calculations SET data_json=?, created_at=? WHERE user_id=? AND name=?",
-                (json.dumps(body.get("data", {})), now, uid, name)
+                (json.dumps(body.get("data", {})), now, UID, name)
             )
         else:
             await db.execute(
                 "INSERT INTO saved_calculations (user_id, name, data_json, created_at) VALUES (?,?,?,?)",
-                (uid, name, json.dumps(body.get("data", {})), now)
+                (UID, name, json.dumps(body.get("data", {})), now)
             )
         await db.commit()
     return {"ok": True}
 
 
 @app.delete("/api/calculations/{name}")
-async def delete_calculation(name: str, current_user: dict = Depends(get_current_user)):
+async def delete_calculation(name: str):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
-            "DELETE FROM saved_calculations WHERE name=? AND user_id=?",
-            (name, current_user["id"])
+            "DELETE FROM saved_calculations WHERE name=? AND user_id=?", (name, UID)
         )
         await db.commit()
     return {"ok": True}
@@ -433,73 +337,33 @@ async def delete_calculation(name: str, current_user: dict = Depends(get_current
 # ─── Daily Digest ─────────────────────────────────────────────────────────────
 
 @app.get("/api/digest/dates")
-async def digest_dates(current_user: dict = Depends(get_current_user)):
-    return await list_digest_dates(current_user["id"])
+async def digest_dates():
+    return await list_digest_dates(UID)
 
 
 @app.get("/api/digest/{date}")
-async def get_digest_by_date(date: str, current_user: dict = Depends(get_current_user)):
-    result = await get_digest(date, current_user["id"])
+async def get_digest_by_date(date: str):
+    result = await get_digest(date, UID)
     if not result:
         raise HTTPException(404, "No digest for this date")
     return result
 
 
 @app.post("/api/digest/generate")
-async def trigger_digest(body: dict = {}, current_user: dict = Depends(get_current_user)):
+async def trigger_digest(body: dict = {}):
     date_str = body.get("date")
-    result = await generate_digest(date_str, current_user["id"])
+    result = await generate_digest(date_str, UID)
     return result
-
-
-# ─── Settings ─────────────────────────────────────────────────────────────────
-
-@app.get("/api/settings")
-async def get_all(current_user: dict = Depends(get_current_user)):
-    return await get_settings_safe(current_user["id"])
-
-
-@app.post("/api/settings")
-async def update_settings(body: dict, current_user: dict = Depends(get_current_user)):
-    uid = current_user["id"]
-    for key, value in body.items():
-        if key == "anthropic_api_key" and value == "***":
-            continue
-        await update_user_setting_safe(uid, key, str(value))
-    return {"ok": True}
-
-
-@app.get("/api/settings/sources")
-async def api_get_sources(current_user: dict = Depends(get_current_user)):
-    return await get_user_sources(current_user["id"])
-
-
-@app.post("/api/settings/sources")
-async def api_save_sources(body: dict, current_user: dict = Depends(get_current_user)):
-    await save_user_sources(current_user["id"], body.get("sources", []))
-    return {"ok": True}
-
-
-@app.post("/api/settings/sources/test")
-async def test_source(body: dict, current_user: dict = Depends(get_current_user)):
-    from news_fetcher import fetch_feed
-    source = body.get("source", {})
-    articles = await fetch_feed(source)
-    return {"headlines": [a["title"] for a in articles[:3]]}
 
 
 # ─── Globe ────────────────────────────────────────────────────────────────────
 
 @app.get("/api/globe/data")
-async def globe_data(
-    since_hours: int = 48,
-    current_user: dict = Depends(get_current_user),
-):
-    uid = current_user["id"]
+async def globe_data(since_hours: int = 48):
     from datetime import timedelta
     cutoff = (datetime.utcnow() - timedelta(hours=since_hours)).isoformat()
 
-    user_sources = await get_user_sources(uid)
+    user_sources = await get_user_sources(UID)
     enabled_names = [s["name"] for s in user_sources if s.get("enabled", True)]
 
     async with aiosqlite.connect(DB_PATH) as db:
@@ -555,10 +419,43 @@ async def globe_data(
     return results
 
 
+# ─── Settings ─────────────────────────────────────────────────────────────────
+
+@app.get("/api/settings")
+async def get_all():
+    return await get_settings_safe(UID)
+
+
+@app.post("/api/settings")
+async def update_settings(body: dict):
+    for key, value in body.items():
+        await update_user_setting_safe(UID, key, str(value))
+    return {"ok": True}
+
+
+@app.get("/api/settings/sources")
+async def api_get_sources():
+    return await get_user_sources(UID)
+
+
+@app.post("/api/settings/sources")
+async def api_save_sources(body: dict):
+    await save_user_sources(UID, body.get("sources", []))
+    return {"ok": True}
+
+
+@app.post("/api/settings/sources/test")
+async def test_source(body: dict):
+    from news_fetcher import fetch_feed
+    source = body.get("source", {})
+    articles = await fetch_feed(source)
+    return {"headlines": [a["title"] for a in articles[:3]]}
+
+
 # ─── Data Management ──────────────────────────────────────────────────────────
 
 @app.post("/api/data/purge")
-async def purge_data(current_user: dict = Depends(get_current_user)):
+async def purge_data():
     val = await get_system_setting("retention_days")
     days = int(val or "30")
     await purge_old_articles(days)
@@ -566,17 +463,16 @@ async def purge_data(current_user: dict = Depends(get_current_user)):
 
 
 @app.get("/api/data/export")
-async def export_data(current_user: dict = Depends(get_current_user)):
+async def export_data():
     import csv
     import io
-    uid = current_user["id"]
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
             """SELECT a.* FROM articles a
                JOIN user_article_states uas ON a.id = uas.article_id
                WHERE uas.user_id=?""",
-            (uid,)
+            (UID,)
         ) as cur:
             articles = [dict(r) for r in await cur.fetchall()]
         async with db.execute("SELECT * FROM ai_analyses") as cur:

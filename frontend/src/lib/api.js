@@ -1,26 +1,8 @@
 const BASE = '/api'
 
-function getToken() {
-  return localStorage.getItem('signal_token')
-}
-
-export function setToken(token) {
-  if (token) localStorage.setItem('signal_token', token)
-  else localStorage.removeItem('signal_token')
-}
-
 async function req(path, opts = {}) {
-  const token = getToken()
   const headers = { 'Content-Type': 'application/json', ...opts.headers }
-  if (token) headers['Authorization'] = `Bearer ${token}`
-
   const res = await fetch(BASE + path, { ...opts, headers })
-
-  if (res.status === 401) {
-    setToken(null)
-    window.dispatchEvent(new Event('signal:logout'))
-    throw new Error('Not authenticated')
-  }
   if (!res.ok) {
     const text = await res.text()
     throw new Error(text || res.statusText)
@@ -29,33 +11,7 @@ async function req(path, opts = {}) {
   return res.json()
 }
 
-// Auth endpoints don't carry a session token and must NOT trigger logout on 401
-// (a 401 from login just means wrong password, not an expired session)
-async function authPost(path, body) {
-  const res = await fetch(BASE + path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  let data
-  try { data = await res.json() } catch { data = {} }
-  if (!res.ok) throw new Error(data.detail || data.message || res.statusText)
-  return data
-}
-
 export const api = {
-  // Auth
-  authStatus: () => fetch(BASE + '/auth/status').then(r => r.json()),
-  login: (username, password) => authPost('/auth/login', { username, password }),
-  register: (username, password) => authPost('/auth/register', { username, password }),
-  me: () => req('/auth/me'),
-  setApiKey: (api_key) => req('/auth/api-key', {
-    method: 'POST', body: JSON.stringify({ api_key })
-  }),
-  changePassword: (old_password, new_password) => req('/auth/change-password', {
-    method: 'POST', body: JSON.stringify({ old_password, new_password })
-  }),
-
   // Articles
   getArticles: (params = {}) => {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''))
