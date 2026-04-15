@@ -115,9 +115,9 @@ CREATE INDEX IF NOT EXISTS idx_infra_influence ON infrastructure_features(influe
 # Defaults applied to each new user
 USER_SETTING_DEFAULTS = {
     "anthropic_api_key": "",
-    "claude_model": "claude-sonnet-4-20250514",
-    "max_tokens": "2048",
-    "auto_analyze": "false",
+    "claude_model": "claude-sonnet-4-6",
+    "max_tokens": "1024",
+    "auto_analyze": "true",
     "conviction_threshold": "7",
     "min_reward_risk": "3.0",
     "digest_morning_time": "08:00",
@@ -225,6 +225,8 @@ async def init_db():
         for migration in [
             "ALTER TABLE positions ADD COLUMN user_id INTEGER DEFAULT 1",
             "ALTER TABLE saved_calculations ADD COLUMN user_id INTEGER DEFAULT 1",
+            # Fix wrong model name from old default
+            "UPDATE user_settings SET value='claude-sonnet-4-6' WHERE key='claude_model' AND value='claude-sonnet-4-20250514'",
         ]:
             try:
                 await db.execute(migration)

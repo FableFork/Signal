@@ -36,7 +36,10 @@ export default function Settings() {
   const save = async () => {
     setSaving(true)
     try {
-      await updateSettings(local)
+      // Strip masked API key — backend already has the real value, sending "***" would overwrite it
+      const payload = { ...local }
+      if (payload.anthropic_api_key === '***') delete payload.anthropic_api_key
+      await updateSettings(payload)
       await api.saveSources(sources)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -100,17 +103,25 @@ export default function Settings() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div style={{ gridColumn: '1 / -1' }}>
               <Label>ANTHROPIC API KEY</Label>
-              <input className="input-sig" type="password" placeholder="sk-ant-..."
-                value={local.anthropic_api_key || ''}
-                onChange={(e) => set('anthropic_api_key', e.target.value)} />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input className="input-sig" type="password"
+                  placeholder={local.anthropic_api_key === '***' ? '● ● ● ● ● ● ● ● (key saved — leave blank to keep)' : 'sk-ant-...'}
+                  value={local.anthropic_api_key === '***' ? '' : (local.anthropic_api_key || '')}
+                  onChange={(e) => set('anthropic_api_key', e.target.value || '***')}
+                  style={{ flex: 1 }}
+                />
+                {local.anthropic_api_key === '***' && (
+                  <span style={{ color: 'var(--bullish)', fontSize: 10, whiteSpace: 'nowrap' }}>✓ SAVED</span>
+                )}
+              </div>
             </div>
             <div>
               <Label>CLAUDE MODEL</Label>
               <select className="input-sig" value={local.claude_model || ''}
                 onChange={(e) => set('claude_model', e.target.value)}>
-                <option value="claude-sonnet-4-20250514">claude-sonnet-4-20250514</option>
-                <option value="claude-opus-4-6">claude-opus-4-6</option>
-                <option value="claude-haiku-4-5-20251001">claude-haiku-4-5-20251001</option>
+                <option value="claude-sonnet-4-6">claude-sonnet-4-6 (recommended)</option>
+                <option value="claude-haiku-4-5-20251001">claude-haiku-4-5-20251001 (fast, cheap)</option>
+                <option value="claude-opus-4-6">claude-opus-4-6 (slow, expensive)</option>
               </select>
             </div>
             <div>
@@ -128,7 +139,7 @@ export default function Settings() {
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>AUTO-ANALYZE ARTICLES</div>
                   <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>
-                    Automatically run AI analysis when you open an article. Enables full Globe coverage. Uses API credits per article.
+                    Analyze each new article as it's fetched (up to 15/cycle). Required for Globe arcs and route signals. Uses API credits.
                   </div>
                 </div>
               </label>

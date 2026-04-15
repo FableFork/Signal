@@ -156,11 +156,15 @@ async def store_articles(articles: list) -> list:
 
 
 async def run_fetch_cycle():
-    """Main fetch loop: pull all enabled sources across all users, store new articles, broadcast via WS."""
+    """Main fetch loop: pull all enabled sources, store new articles, auto-analyze if enabled."""
     from settings_manager import get_all_enabled_sources
+    from database import get_user_setting
+    from ai_analyzer import analyze_article
+
     enabled = await get_all_enabled_sources()
     if not enabled:
         return
+
     tasks = [fetch_feed(s) for s in enabled]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -172,6 +176,22 @@ async def run_fetch_cycle():
     new_ones = await store_articles(all_articles)
     for art in new_ones:
         await ws_manager.broadcast({"type": "new_article", "article": art})
+
+    # Auto-analyze new articles if enabled and API key is set
+    auto = await get_user_setting(1, "auto_analyze")
+    if auto == "true" and new_ones:
+        api_key = await get_user_setting(1, "anthropic_api_key")
+        if api_key and api_key not in ("***", ""):
+            # Cap per cycle to avoid flooding the API — oldest unanalyzed articles first
+            to_analyze = new_ones[:15]
+            for art in to_analyze:
+                try:
+                    await analyze_article(
+                        art["guid"], art["title"], art.get("body", ""), user_id=1
+                    )
+                    await asyncio.sleep(0.5)  # stay within rate limits
+                except Exception:
+                    pass
 
     return len(new_ones)
 

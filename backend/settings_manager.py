@@ -18,6 +18,9 @@ DEFAULT_SOURCES = json.loads(USER_SETTING_DEFAULTS["sources"])
 
 
 async def update_user_setting_safe(user_id: int, key: str, value: str):
+    # Never overwrite a sensitive key with the masked placeholder value
+    if key in SENSITIVE_KEYS and value in ("***", ""):
+        return
     if key in SYSTEM_KEYS:
         await set_system_setting(key, value)
         if key == "fetch_interval_seconds":
