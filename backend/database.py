@@ -225,6 +225,7 @@ async def init_db():
         for migration in [
             "ALTER TABLE positions ADD COLUMN user_id INTEGER DEFAULT 1",
             "ALTER TABLE saved_calculations ADD COLUMN user_id INTEGER DEFAULT 1",
+            "ALTER TABLE daily_digests ADD COLUMN user_id INTEGER DEFAULT 1",
             # Fix wrong model name from old default
             "UPDATE user_settings SET value='claude-sonnet-4-6' WHERE key='claude_model' AND value='claude-sonnet-4-20250514'",
         ]:
