@@ -142,8 +142,8 @@ async def store_articles(articles: list) -> list:
                 cur = await db.execute(
                     """INSERT INTO articles
                     (guid, source_name, source_url, category, title, url,
-                     published_at, fetched_at, snippet, body, read, tag)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,0,NULL)""",
+                     published_at, fetched_at, snippet, body)
+                    VALUES (?,?,?,?,?,?,?,?,?,?)""",
                     (art["guid"], art["source_name"], art["source_url"], art["category"],
                      art["title"], art["url"], art["published_at"], art["fetched_at"],
                      art["snippet"], art["body"])

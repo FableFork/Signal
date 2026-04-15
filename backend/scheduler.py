@@ -2,7 +2,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 import pytz
-from database import get_system_setting
+from database import get_system_setting, get_all_user_ids
 from news_fetcher import run_fetch_cycle
 from daily_digest import generate_digest
 
@@ -10,7 +10,8 @@ scheduler = AsyncIOScheduler()
 
 
 async def _run_digest():
-    await generate_digest()
+    for uid in await get_all_user_ids():
+        await generate_digest(user_id=uid)
 
 
 async def _run_fetch():
