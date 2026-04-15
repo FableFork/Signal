@@ -227,7 +227,7 @@ function InfraLayer({ infrastructure, influenceMin, layers, onSelect }) {
   })
 }
 
-function ArcsLayer({ articles, infrastructure, influenceMin }) {
+function ArcsLayer({ articles, infrastructure, influenceMin, onSelect }) {
   const arcs = useMemo(() => {
     const eligibleInfra = infrastructure.filter(f => f.influence >= influenceMin)
     const result = []
@@ -236,14 +236,15 @@ function ArcsLayer({ articles, infrastructure, influenceMin }) {
       if (!article.locations_affected?.length) continue
 
       const matchTypes = new Set()
+      const matchedBy = [] // which instruments/industries triggered the match
       for (const inst of (article.instruments_affected || [])) {
         const key = inst.toUpperCase().replace(/[^A-Z]/g, '')
         const types = INSTRUMENT_TO_TYPES[key] || []
-        types.forEach(t => matchTypes.add(t))
+        if (types.length) { types.forEach(t => matchTypes.add(t)); matchedBy.push(inst) }
       }
       for (const ind of (article.industries_affected || [])) {
         const types = INDUSTRY_TO_TYPES[ind.toLowerCase()] || []
-        types.forEach(t => matchTypes.add(t))
+        if (types.length) { types.forEach(t => matchTypes.add(t)); matchedBy.push(ind) }
       }
       if (!matchTypes.size) continue
 
@@ -266,8 +267,25 @@ function ArcsLayer({ articles, infrastructure, influenceMin }) {
         if (!coords) continue
 
         for (const infra of matchingInfra) {
+          // Which types specifically link this article to this infra
+          const linkTypes = matchedBy
+            .filter(m => {
+              const key = m.toUpperCase().replace(/[^A-Z]/g, '')
+              const types = INSTRUMENT_TO_TYPES[key] || INDUSTRY_TO_TYPES[m.toLowerCase()] || []
+              return types.includes(infra.feature_type)
+            })
+            .slice(0, 3)
+
           const path = bezierArcPath(coords, [infra.lat, infra.lng])
-          result.push({ path, color, weight, opacity, key: `${article.id}-${infra.id}-${loc.name}` })
+          result.push({
+            path, color, weight, opacity,
+            key: `${article.id}-${infra.id}-${loc.name}`,
+            article,
+            infraName: infra.name,
+            infraType: infra.feature_type,
+            fromLoc: loc.name,
+            linkTypes,
+          })
         }
       }
 
@@ -277,18 +295,53 @@ function ArcsLayer({ articles, infrastructure, influenceMin }) {
     return result
   }, [articles, infrastructure, influenceMin])
 
-  return arcs.map(arc => (
-    <Polyline
-      key={arc.key}
-      positions={arc.path}
-      pathOptions={{
-        color: arc.color,
-        weight: arc.weight,
-        opacity: arc.opacity,
-        dashArray: '5 8',
-      }}
-    />
-  ))
+  return arcs.map(arc => {
+    const dirLabel = arc.article.direction?.toUpperCase() || 'NEUTRAL'
+    const conv = arc.article.conviction || '?'
+    const ttTitle = arc.article.title?.length > 60
+      ? arc.article.title.slice(0, 60) + '…'
+      : arc.article.title
+    const via = arc.linkTypes.length ? arc.linkTypes.join(', ') : arc.infraType?.replace(/_/g, ' ')
+
+    return (
+      <Polyline
+        key={arc.key}
+        positions={arc.path}
+        pathOptions={{
+          color: arc.color,
+          weight: arc.weight,
+          opacity: arc.opacity,
+          dashArray: '5 8',
+        }}
+        eventHandlers={{
+          click: () => onSelect({ type: 'arc', article: arc.article, infraName: arc.infraName, fromLoc: arc.fromLoc, linkTypes: arc.linkTypes }),
+          mouseover: (e) => e.target.setStyle({ weight: arc.weight + 2, opacity: 0.9 }),
+          mouseout: (e) => e.target.setStyle({ weight: arc.weight, opacity: arc.opacity }),
+        }}
+      >
+        <Tooltip sticky direction="top" offset={[0, -4]}
+          className="arc-tooltip"
+          pane="tooltipPane"
+        >
+          <div style={{
+            fontFamily: "'JetBrains Mono','Fira Code','Courier New',monospace",
+            fontSize: 10, lineHeight: 1.5, maxWidth: 240,
+            background: '#0a0a0f', border: '1px solid #1e1e2e',
+            padding: '5px 8px', borderRadius: 3,
+            color: '#e8e8f0',
+          }}>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
+              <span style={{ color: arc.color, fontWeight: 700 }}>{dirLabel}</span>
+              <span style={{ color: '#666677' }}>C{conv}</span>
+              <span style={{ color: '#444455', marginLeft: 'auto' }}>{arc.fromLoc} → {arc.infraName}</span>
+            </div>
+            <div style={{ color: '#aaaacc' }}>{ttTitle}</div>
+            {via && <div style={{ color: '#555566', marginTop: 2 }}>via {via}</div>}
+          </div>
+        </Tooltip>
+      </Polyline>
+    )
+  })
 }
 
 function NewsLayer({ articles, onSelect }) {
@@ -507,6 +560,67 @@ function LayerControls({
   )
 }
 
+// ─── Arc panel ────────────────────────────────────────────────────────────────
+
+function ArcPanel({ selected, S }) {
+  const { article: a, infraName, fromLoc, linkTypes } = selected
+  const dirColor = a.direction === 'bullish' ? _gc.bullish
+    : a.direction === 'bearish' ? _gc.bearish
+    : _gc.neutral
+  const hrsAgo = Math.round((Date.now() - new Date(a.published_at).getTime()) / 3600000)
+
+  return (
+    <>
+      <div style={S.section}>
+        <div style={S.sectionTitle}>WHY THIS CONNECTION</div>
+        <div style={{ color: '#888899', lineHeight: 1.7 }}>
+          News event in <span style={{ color: '#e8e8f0' }}>{fromLoc}</span> is routed to{' '}
+          <span style={{ color: '#e8e8f0' }}>{infraName}</span> because the article
+          affects{' '}
+          <span style={{ color: dirColor }}>
+            {linkTypes.length ? linkTypes.join(', ') : 'this commodity type'}
+          </span>.
+        </div>
+      </div>
+
+      <div style={S.section}>
+        <div style={S.sectionTitle}>ARTICLE</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 6, alignItems: 'center' }}>
+          <span style={S.tag(dirColor)}>{(a.direction || 'neutral').toUpperCase()}</span>
+          {a.conviction && <span style={S.tag('#666677')}>CONVICTION {a.conviction}/10</span>}
+          {a.urgency === 'high' && <span style={S.tag('#ff6b00')}>URGENT</span>}
+          <span style={{ color: '#333344', fontSize: 9, marginLeft: 'auto' }}>{hrsAgo}H AGO</span>
+        </div>
+        <div style={{ color: '#e8e8f0', lineHeight: 1.5, marginBottom: 8 }}>{a.title}</div>
+        {a.reasoning && (
+          <div style={{ color: '#666677', lineHeight: 1.6, fontSize: 10 }}>{a.reasoning}</div>
+        )}
+      </div>
+
+      {a.instruments_affected?.length > 0 && (
+        <div style={S.section}>
+          <div style={S.sectionTitle}>INSTRUMENTS AFFECTED</div>
+          <div>{a.instruments_affected.map(t => <span key={t} style={S.tag('#5b8db8')}>{t}</span>)}</div>
+        </div>
+      )}
+
+      {a.industries_affected?.length > 0 && (
+        <div style={S.section}>
+          <div style={S.sectionTitle}>INDUSTRIES AFFECTED</div>
+          <div>{a.industries_affected.map(t => <span key={t} style={S.tag('#7777aa')}>{t}</span>)}</div>
+        </div>
+      )}
+
+      {a.locations_affected?.length > 0 && (
+        <div style={S.section}>
+          <div style={S.sectionTitle}>ALL LOCATIONS IN THIS ARTICLE</div>
+          <div>{a.locations_affected.map(l => <span key={l.name} style={S.tag('#444455')}>{l.name}</span>)}</div>
+        </div>
+      )}
+    </>
+  )
+}
+
 // ─── Info panels ──────────────────────────────────────────────────────────────
 
 function InfoPanel({ selected, onClose }) {
@@ -567,6 +681,7 @@ function InfoPanel({ selected, onClose }) {
 
   const title = selected.type === 'route' ? selected.feature.properties.name
     : selected.type === 'infra' ? selected.feature.name
+    : selected.type === 'arc' ? `${selected.fromLoc} → ${selected.infraName}`
     : selected.location
 
   return (
@@ -579,6 +694,7 @@ function InfoPanel({ selected, onClose }) {
         {selected.type === 'route' && <RoutePanel selected={selected} S={S} />}
         {selected.type === 'infra' && <InfraPanel selected={selected} S={S} />}
         {selected.type === 'news' && <NewsDotPanel selected={selected} S={S} />}
+        {selected.type === 'arc' && <ArcPanel selected={selected} S={S} />}
       </div>
     </div>
   )
@@ -902,6 +1018,7 @@ export default function Globe() {
             <ArcsLayer
               articles={filteredArticles}
               infrastructure={infrastructure}
+              onSelect={setSelected}
               influenceMin={influenceMin}
             />
           )}
