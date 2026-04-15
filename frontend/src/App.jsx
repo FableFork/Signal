@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
-import { api } from './lib/api'
+import { api, setToken } from './lib/api'
 import { applyTheme } from './lib/theme'
 import Dashboard from './pages/Dashboard'
 import Daily from './pages/Daily'
 import Settings from './pages/Settings'
+import Login from './pages/Login'
 
 // ─── Global Context ───────────────────────────────────────────────────────────
 export const AppContext = createContext(null)
@@ -58,15 +59,51 @@ export default function App() {
   const [selectedArticle, setSelectedArticle] = useState(null)
   const articleListeners = useRef([])
 
-  // Load settings on mount
+  // ── Auth state ──
+  const [authReady, setAuthReady] = useState(false)
+  const [user, setUser] = useState(null)
+  const [isFirstRun, setIsFirstRun] = useState(false)
+
   useEffect(() => {
+    api.authStatus().then(({ has_users }) => {
+      if (!has_users) {
+        setIsFirstRun(true)
+        setAuthReady(true)
+        return
+      }
+      // Try existing token
+      api.me().then((u) => {
+        setUser(u)
+        setAuthReady(true)
+      }).catch(() => {
+        setToken(null)
+        setAuthReady(true)
+      })
+    }).catch(() => setAuthReady(true))
+  }, [])
+
+  // Listen for forced logout (401)
+  useEffect(() => {
+    const handler = () => { setUser(null); setToken(null) }
+    window.addEventListener('signal:logout', handler)
+    return () => window.removeEventListener('signal:logout', handler)
+  }, [])
+
+  const handleAuth = (u) => {
+    setUser(u)
+    setIsFirstRun(false)
+  }
+
+  // Load settings on mount (only when authed)
+  useEffect(() => {
+    if (!user) return
     api.getSettings().then((s) => {
       setSettings(s)
       applyTheme(s)
       setTvSymbol(s.tradingview_default_symbol || '')
       setTvInterval(s.tradingview_default_interval || 'D')
     }).catch(() => {})
-  }, [])
+  }, [user])
 
   const refreshUnread = useCallback(async () => {
     try {
@@ -111,12 +148,22 @@ export default function App() {
     onNewArticle, offNewArticle,
     tab, setTab,
     selectedArticle, setSelectedArticle,
+    user,
+    logout: () => { setToken(null); setUser(null) },
+  }
+
+  // Not ready yet — blank screen (avoids flash)
+  if (!authReady) return null
+
+  // Show login / first-run screen
+  if (!user) {
+    return <Login onAuth={handleAuth} isFirstRun={isFirstRun} />
   }
 
   return (
     <AppContext.Provider value={ctx}>
       <div style={{ width: '100vw', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <NavBar tab={tab} setTab={setTab} connected={connected} unreadCount={unreadCount} />
+        <NavBar tab={tab} setTab={setTab} connected={connected} unreadCount={unreadCount} user={user} logout={ctx.logout} />
         <div style={{ flex: 1, overflow: 'hidden' }}>
           {tab === 'dashboard' && <Dashboard />}
           {tab === 'daily' && <Daily />}
@@ -127,7 +174,7 @@ export default function App() {
   )
 }
 
-function NavBar({ tab, setTab, connected, unreadCount }) {
+function NavBar({ tab, setTab, connected, unreadCount, user, logout }) {
   const tabs = [
     { id: 'dashboard', label: 'DASHBOARD' },
     { id: 'daily', label: 'DAILY' },
@@ -197,17 +244,31 @@ function NavBar({ tab, setTab, connected, unreadCount }) {
 
       <div style={{ flex: 1 }} />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div
-          className={connected ? 'pulse' : ''}
-          style={{
-            width: 6, height: 6, borderRadius: '50%',
-            background: connected ? 'var(--bullish)' : 'var(--bearish)',
-          }}
-        />
-        <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
-          {connected ? 'LIVE' : 'OFFLINE'}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div
+            className={connected ? 'pulse' : ''}
+            style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: connected ? 'var(--bullish)' : 'var(--bearish)',
+            }}
+          />
+          <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
+            {connected ? 'LIVE' : 'OFFLINE'}
+          </span>
+        </div>
+
+        <span style={{ fontSize: 10, color: 'var(--text-secondary)', opacity: 0.5 }}>|</span>
+        <span style={{ fontSize: 10, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+          {user?.username}
         </span>
+        <button
+          onClick={logout}
+          className="btn"
+          style={{ fontSize: 10, padding: '2px 8px' }}
+        >
+          SIGN OUT
+        </button>
       </div>
     </nav>
   )

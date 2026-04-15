@@ -4,7 +4,7 @@ import json
 import asyncio
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
-from database import get_setting, aiosqlite, DB_PATH
+from database import aiosqlite, DB_PATH
 from websocket_manager import ws_manager
 import hashlib
 
@@ -156,16 +156,11 @@ async def store_articles(articles: list) -> list:
 
 
 async def run_fetch_cycle():
-    """Main fetch loop: pull all enabled sources, store new articles, broadcast via WS."""
-    sources_raw = await get_setting("sources")
-    if not sources_raw:
+    """Main fetch loop: pull all enabled sources across all users, store new articles, broadcast via WS."""
+    from settings_manager import get_all_enabled_sources
+    enabled = await get_all_enabled_sources()
+    if not enabled:
         return
-    try:
-        sources = json.loads(sources_raw)
-    except Exception:
-        return
-
-    enabled = [s for s in sources if s.get("enabled", True)]
     tasks = [fetch_feed(s) for s in enabled]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 

@@ -5,7 +5,7 @@ from datetime import datetime
 from database import get_setting, DB_PATH
 
 
-async def analyze_article(article_guid: str, title: str, body: str) -> dict:
+async def analyze_article(article_guid: str, title: str, body: str, api_key: str = None) -> dict:
     """Run Claude analysis on an article. Returns cached result if exists."""
     # Check cache first
     async with aiosqlite.connect(DB_PATH) as db:
@@ -17,7 +17,9 @@ async def analyze_article(article_guid: str, title: str, body: str) -> dict:
             if row:
                 return {"cached": True, "result": json.loads(row[0])}
 
-    api_key = await get_setting("anthropic_api_key")
+    # Use provided key, fall back to global setting
+    if not api_key:
+        api_key = await get_setting("anthropic_api_key")
     if not api_key:
         return {"error": "No API key configured"}
 
