@@ -121,6 +121,13 @@ USER_SETTING_DEFAULTS = {
     "color_bearish": "#ff3b3b",
     "color_neutral": "#888888",
     "color_urgency_high": "#ff6b00",
+    "color_globe_news_bullish": "#00ff88",
+    "color_globe_news_bearish": "#ff3b3b",
+    "color_globe_news_neutral": "#8888aa",
+    "color_globe_route_no_signal": "#3d5a73",
+    "color_globe_route_normal": "#00ff88",
+    "color_globe_route_elevated": "#ff6b00",
+    "color_globe_route_high_risk": "#ff3b3b",
     "article_system_prompt": """You are SIGNAL, a trading intelligence system. Analyze the provided news article and determine its market implications.
 Trace causality chains from the news event to affected instruments and industries. Examples:
 Iran/Hormuz/Middle East → Oil, Gold, Energy stocks, Shipping

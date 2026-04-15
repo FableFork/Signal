@@ -325,6 +325,24 @@ export default function Settings() {
           </button>
         </Section>
 
+        {/* Globe Colors */}
+        <Section title="GLOBE COLORS">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            {[
+              ['color_globe_news_bullish', 'News — Bullish'],
+              ['color_globe_news_bearish', 'News — Bearish'],
+              ['color_globe_news_neutral', 'News — Neutral'],
+              ['color_globe_route_no_signal', 'Route — No Signal'],
+              ['color_globe_route_normal', 'Route — Normal'],
+              ['color_globe_route_elevated', 'Route — Elevated'],
+              ['color_globe_route_high_risk', 'Route — High Risk'],
+            ].map(([key, label]) => (
+              <ColorPicker key={key} label={label} value={local[key] || '#000000'}
+                onChange={(v) => set(key, v)} />
+            ))}
+          </div>
+        </Section>
+
         {/* TradingView */}
         <Section title="TRADINGVIEW">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>

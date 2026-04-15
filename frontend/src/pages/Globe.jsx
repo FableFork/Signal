@@ -8,13 +8,16 @@ import tradeRoutes from '../data/trade_routes.json'
 import energyData from '../data/energy.json'
 import miningData from '../data/mining_agriculture.json'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Colors (mutable — updated from settings on each Globe render) ────────────
 
-const C = {
+const _gc = {
   bullish: '#00ff88',
   bearish: '#ff3b3b',
-  neutral: '#555566',
+  neutral: '#8888aa',
   amber: '#ff6b00',
+  routeNoSignal: '#3d5a73',
+  routeNormal: '#00ff88',
+  routeHigh: '#ff3b3b',
 }
 
 const TIME_RANGES = { '6H': 6, '24H': 24, '48H': 48, '7D': 168 }
@@ -39,16 +42,16 @@ const TYPE_COLORS = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function dirColor(dir) {
-  if (dir === 'bullish') return C.bullish
-  if (dir === 'bearish') return C.bearish
-  return C.neutral
+  if (dir === 'bullish') return _gc.bullish
+  if (dir === 'bearish') return _gc.bearish
+  return _gc.neutral
 }
 
 function disruptionColor(pct) {
-  if (pct === 0) return '#333344'
-  if (pct < 20) return C.bullish
-  if (pct < 50) return C.amber
-  return C.bearish
+  if (pct === 0) return _gc.routeNoSignal
+  if (pct < 20) return _gc.routeNormal
+  if (pct < 50) return _gc.amber
+  return _gc.routeHigh
 }
 
 function disruptionLabel(pct) {
@@ -303,7 +306,7 @@ function RoutePanel({ feature, disruption }) {
         <div style={S.sectionHdr}>HISTORICAL DISRUPTIONS</div>
         {p.historical_disruptions.map((h, i) => (
           <div key={i} style={{ marginBottom: 5 }}>
-            <span style={{ fontSize: 10, color: C.amber, fontWeight: 700 }}>{h.year}</span>
+            <span style={{ fontSize: 10, color: _gc.amber, fontWeight: 700 }}>{h.year}</span>
             <span style={{ fontSize: 10, color: 'var(--text-secondary)', marginLeft: 8 }}>{h.event}</span>
           </div>
         ))}
@@ -321,10 +324,10 @@ function RoutePanel({ feature, disruption }) {
 function ResourcePanel({ feature, disruption }) {
   const p = feature.properties
   const { pct, articles: ma = [], avgConviction } = disruption
-  const statusColor = p.operational_status === 'operational' ? C.bullish
-    : ['constrained', 'partially_operational', 'volatile', 'underperforming', 'ramping'].includes(p.operational_status) ? C.amber
-    : ['shutdown_standby', 'expired_contract', 'severely_disrupted'].includes(p.operational_status) ? C.bearish
-    : C.neutral
+  const statusColor = p.operational_status === 'operational' ? _gc.bullish
+    : ['constrained', 'partially_operational', 'volatile', 'underperforming', 'ramping'].includes(p.operational_status) ? _gc.amber
+    : ['shutdown_standby', 'expired_contract', 'severely_disrupted'].includes(p.operational_status) ? _gc.bearish
+    : _gc.neutral
   return (
     <div style={{ padding: 18 }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.08em', marginBottom: 4 }}>
@@ -335,7 +338,7 @@ function ResourcePanel({ feature, disruption }) {
       </div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
         <Tag label={p.type?.replace(/_/g, ' ')} color="var(--text-secondary)" />
-        {p.sanctions && <Tag label="SANCTIONED" color={C.bearish} />}
+        {p.sanctions && <Tag label="SANCTIONED" color={_gc.bearish} />}
         <Tag label={p.operational_status?.replace(/_/g, ' ').toUpperCase()} color={statusColor} />
       </div>
       {pct > 0 && (
@@ -445,7 +448,7 @@ function DefaultPanel({ routeDisruptions, totalArticles }) {
       ))}
       <div style={S.divider} />
       <div style={S.sectionHdr}>LEGEND — ROUTES</div>
-      {[['#00ff88', 'Normal (&lt;20% signal)'], [C.amber, 'Elevated (20–50%)'], [C.bearish, 'High risk (&gt;50%)'], ['#333344', 'No signal']].map(([color, label]) => (
+      {[[_gc.routeNormal, 'Normal (&lt;20% signal)'], [_gc.amber, 'Elevated (20–50%)'], [_gc.routeHigh, 'High risk (&gt;50%)'], [_gc.routeNoSignal, 'No signal']].map(([color, label]) => (
         <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0' }}>
           <div style={{ width: 22, height: 3, background: color, flexShrink: 0 }} />
           <span style={{ fontSize: 10, color: 'var(--text-secondary)' }} dangerouslySetInnerHTML={{ __html: label }} />
@@ -457,8 +460,8 @@ function DefaultPanel({ routeDisruptions, totalArticles }) {
         ['circle', '#ff8c00', 'Energy (circle)'],
         ['diamond', '#b87333', 'Mining (diamond)'],
         ['square', '#f9a825', 'Agriculture / Port (square)'],
-        ['circle', C.bullish, 'News — bullish'],
-        ['circle', C.bearish, 'News — bearish'],
+        ['circle', _gc.bullish, 'News — bullish'],
+        ['circle', _gc.bearish, 'News — bearish'],
       ].map(([shape, color, label]) => (
         <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0' }}>
           {shape === 'diamond'
@@ -477,7 +480,7 @@ function DefaultPanel({ routeDisruptions, totalArticles }) {
 // ─── Layer Control ────────────────────────────────────────────────────────────
 
 const LAYER_DEFS = [
-  { id: 'news', label: 'NEWS', color: C.bullish },
+  { id: 'news', label: 'NEWS', color: _gc.bullish },
   { id: 'routes', label: 'ROUTES', color: '#29b6f6' },
   { id: 'energy', label: 'ENERGY', color: '#ff8c00' },
   { id: 'mining', label: 'MINING', color: '#b87333' },
@@ -524,7 +527,16 @@ const CARTO_TILE = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.pn
 const CARTO_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
 
 export default function Globe() {
-  const { setSelectedArticle, setTab } = useApp()
+  const { settings, setSelectedArticle, setTab } = useApp()
+
+  // Sync settings → module-level _gc so helper functions pick up custom colors
+  _gc.bullish = settings?.color_globe_news_bullish || '#00ff88'
+  _gc.bearish = settings?.color_globe_news_bearish || '#ff3b3b'
+  _gc.neutral = settings?.color_globe_news_neutral || '#8888aa'
+  _gc.amber = settings?.color_globe_route_elevated || '#ff6b00'
+  _gc.routeNoSignal = settings?.color_globe_route_no_signal || '#3d5a73'
+  _gc.routeNormal = settings?.color_globe_route_normal || '#00ff88'
+  _gc.routeHigh = settings?.color_globe_route_high_risk || '#ff3b3b'
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState(() => localStorage.getItem('globe_time') || '24H')
