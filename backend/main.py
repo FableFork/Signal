@@ -488,6 +488,73 @@ async def test_source(body: dict, current_user: dict = Depends(get_current_user)
     return {"headlines": [a["title"] for a in articles[:3]]}
 
 
+# ─── Globe ────────────────────────────────────────────────────────────────────
+
+@app.get("/api/globe/data")
+async def globe_data(
+    since_hours: int = 48,
+    current_user: dict = Depends(get_current_user),
+):
+    uid = current_user["id"]
+    from datetime import timedelta
+    cutoff = (datetime.utcnow() - timedelta(hours=since_hours)).isoformat()
+
+    user_sources = await get_user_sources(uid)
+    enabled_names = [s["name"] for s in user_sources if s.get("enabled", True)]
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        if enabled_names:
+            placeholders = ",".join("?" * len(enabled_names))
+            params = enabled_names + [cutoff]
+            async with db.execute(
+                f"""SELECT a.id, a.guid, a.title, a.source_name, a.published_at, a.category,
+                           ai.result_json
+                    FROM articles a
+                    JOIN ai_analyses ai ON a.guid = ai.article_guid
+                    WHERE a.source_name IN ({placeholders}) AND a.published_at >= ?
+                    ORDER BY a.published_at DESC LIMIT 500""",
+                params,
+            ) as cur:
+                rows = await cur.fetchall()
+        else:
+            async with db.execute(
+                """SELECT a.id, a.guid, a.title, a.source_name, a.published_at, a.category,
+                          ai.result_json
+                   FROM articles a
+                   JOIN ai_analyses ai ON a.guid = ai.article_guid
+                   WHERE a.published_at >= ?
+                   ORDER BY a.published_at DESC LIMIT 500""",
+                (cutoff,),
+            ) as cur:
+                rows = await cur.fetchall()
+
+    results = []
+    for row in rows:
+        try:
+            ai = json.loads(row["result_json"])
+        except Exception:
+            continue
+        results.append({
+            "id": row["id"],
+            "guid": row["guid"],
+            "title": row["title"],
+            "source_name": row["source_name"],
+            "published_at": row["published_at"],
+            "category": row["category"],
+            "direction": ai.get("direction"),
+            "conviction": ai.get("conviction"),
+            "urgency": ai.get("urgency"),
+            "timeframe": ai.get("timeframe"),
+            "action": ai.get("action"),
+            "reasoning": ai.get("reasoning"),
+            "instruments_affected": ai.get("instruments_affected", []),
+            "industries_affected": ai.get("industries_affected", []),
+            "locations_affected": ai.get("locations_affected", []),
+        })
+    return results
+
+
 # ─── Data Management ──────────────────────────────────────────────────────────
 
 @app.post("/api/data/purge")

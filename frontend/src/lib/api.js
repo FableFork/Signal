@@ -92,6 +92,12 @@ export const api = {
     method: 'POST', body: JSON.stringify({ source })
   }),
 
+  // Globe
+  globeData: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''))
+    return req(`/globe/data?${qs}`)
+  },
+
   // Data
   purgeData: () => req('/data/purge', { method: 'POST' }),
   exportData: () => req('/data/export'),

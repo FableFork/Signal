@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Daily from './pages/Daily'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
+import Globe from './pages/Globe'
 
 // ─── Global Context ───────────────────────────────────────────────────────────
 export const AppContext = createContext(null)
@@ -167,6 +168,7 @@ export default function App() {
         <div style={{ flex: 1, overflow: 'hidden' }}>
           {tab === 'dashboard' && <Dashboard />}
           {tab === 'daily' && <Daily />}
+          {tab === 'globe' && <Globe />}
           {tab === 'settings' && <Settings />}
         </div>
       </div>
@@ -178,6 +180,7 @@ function NavBar({ tab, setTab, connected, unreadCount, user, logout }) {
   const tabs = [
     { id: 'dashboard', label: 'DASHBOARD' },
     { id: 'daily', label: 'DAILY' },
+    { id: 'globe', label: '◉ GLOBE' },
     { id: 'settings', label: 'SETTINGS' },
   ]
 

@@ -4,7 +4,7 @@ import { useApp } from '../../App'
 import dayjs from 'dayjs'
 
 export default function ArticleReader() {
-  const { selectedArticle, setSelectedArticle, setTvSymbol } = useApp()
+  const { selectedArticle, setSelectedArticle, setTvSymbol, settings } = useApp()
   const [article, setArticle] = useState(null)
   const [loading, setLoading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
@@ -20,10 +20,22 @@ export default function ArticleReader() {
       .then((full) => {
         setArticle(full)
         setTag(full.tag)
+        // Auto-analyze if enabled and no existing analysis
+        if (settings?.auto_analyze === 'true' && !full.ai_analysis) {
+          setAnalyzing(true)
+          api.analyzeArticle(full.id)
+            .then((result) => {
+              if (!result.error) {
+                setArticle((prev) => ({ ...prev, ai_analysis: result.result }))
+              }
+            })
+            .catch(() => {})
+            .finally(() => setAnalyzing(false))
+        }
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [selectedArticle?.id])
+  }, [selectedArticle?.id]) // intentionally exclude settings to avoid re-fetching on settings change
 
   const runAnalysis = async () => {
     if (!article) return

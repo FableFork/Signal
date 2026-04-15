@@ -162,6 +162,21 @@ export default function Settings() {
               <input className="input-sig" type="number" value={local.max_tokens || ''}
                 onChange={(e) => set('max_tokens', e.target.value)} />
             </div>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 24, alignItems: 'center', padding: '8px 0' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={local.auto_analyze === 'true'}
+                  onChange={(e) => set('auto_analyze', e.target.checked ? 'true' : 'false')}
+                />
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>AUTO-ANALYZE ARTICLES</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>
+                    Automatically run AI analysis when you open an article. Enables full Globe coverage. Uses API credits per article.
+                  </div>
+                </div>
+              </label>
+            </div>
             <div>
               <Label>CONVICTION THRESHOLD (hide below)</Label>
               <input className="input-sig" type="number" min="1" max="10" value={local.conviction_threshold || ''}

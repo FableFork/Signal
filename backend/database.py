@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS articles (
     body TEXT
 );
 
+
+
 CREATE TABLE IF NOT EXISTS ai_analyses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     article_guid TEXT UNIQUE NOT NULL,
@@ -95,6 +97,7 @@ USER_SETTING_DEFAULTS = {
     "anthropic_api_key": "",
     "claude_model": "claude-sonnet-4-20250514",
     "max_tokens": "2048",
+    "auto_analyze": "false",
     "conviction_threshold": "7",
     "min_reward_risk": "3.0",
     "digest_morning_time": "08:00",
@@ -139,8 +142,10 @@ Return ONLY valid JSON, no prose, no markdown, no preamble:
 "suggested_entry": null,
 "suggested_stop": null,
 "suggested_target": null,
-"reward_risk_ratio": null
-}""",
+"reward_risk_ratio": null,
+"locations_affected": [{"name": "Iran", "lat": 32.0, "lng": 53.0}, {"name": "Strait of Hormuz", "lat": 26.5, "lng": 56.5}]
+}
+For locations_affected: include all real-world geographic locations mentioned or implied (countries, cities, straits, regions). Use accurate WGS84 lat/lng coordinates. Empty array if no specific geography.""",
     "digest_system_prompt": """You are SIGNAL's daily intelligence briefing system. Generate a comprehensive market and world digest for a trader focused on commodities, energy, and global equities.
 Cover in order of importance:
 Breaking news (last 24h, globally significant, no topic filter)
