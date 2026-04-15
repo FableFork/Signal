@@ -1,0 +1,204 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [58.5, 22.5], [57.0, 23.5], [56.5, 24.5], [56.3, 25.5], [55.5, 26.0]
+        ]
+      },
+      "properties": {
+        "id": "hormuz",
+        "name": "Strait of Hormuz",
+        "short": "Hormuz",
+        "region": "Middle East",
+        "keywords": ["hormuz", "strait of hormuz", "persian gulf", "iran", "oman", "uae", "gulf"],
+        "daily_oil_mbd": 21,
+        "daily_lng_pct": 30,
+        "vessels_per_year": 17000,
+        "width_km": 55,
+        "dependent_nations": [
+          { "country": "Japan", "pct": 87, "commodity": "crude oil" },
+          { "country": "South Korea", "pct": 76, "commodity": "crude oil" },
+          { "country": "India", "pct": 55, "commodity": "crude oil" },
+          { "country": "China", "pct": 40, "commodity": "crude oil" },
+          { "country": "Europe", "pct": 20, "commodity": "LNG" }
+        ],
+        "commodities": ["crude oil", "LNG", "refined products", "petrochemicals"],
+        "alternative_route": "Cape of Good Hope (+14 days, ~$1.5/bbl freight premium)",
+        "price_impact": "Brent +$8–15/bbl; LNG spot +15–25%; freight rates x3–5",
+        "historical_disruptions": [
+          { "year": "1980–88", "event": "Tanker War, Iran-Iraq conflict" },
+          { "year": "2019", "event": "Iranian tanker seizures and mine attacks" },
+          { "year": "2023–24", "event": "Elevated tension following Gaza conflict" }
+        ],
+        "current_risk_baseline": "medium",
+        "strategic_notes": "Single most important oil chokepoint globally. Iran can threaten closure with mines and naval assets. No viable alternative for Gulf producers short-term."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [32.3, 30.0], [32.5, 29.0], [32.6, 28.0], [32.8, 27.0],
+          [33.2, 26.0], [33.6, 25.0], [34.0, 24.5], [35.0, 23.5],
+          [36.5, 22.0], [37.5, 21.0], [38.5, 20.0], [40.0, 19.0], [42.5, 13.0], [43.5, 12.0]
+        ]
+      },
+      "properties": {
+        "id": "suez",
+        "name": "Suez Canal",
+        "short": "Suez",
+        "region": "North Africa / Red Sea",
+        "keywords": ["suez", "suez canal", "egypt", "red sea", "mediterranean", "ismailia"],
+        "daily_oil_mbd": 4.5,
+        "container_ships_daily": 50,
+        "vessels_per_year": 19000,
+        "trade_pct_global": 12,
+        "dependent_nations": [
+          { "country": "Europe", "pct": 65, "commodity": "Asia imports" },
+          { "country": "Asia", "pct": 40, "commodity": "Europe exports" }
+        ],
+        "commodities": ["crude oil", "LNG", "container goods", "grain", "chemicals"],
+        "alternative_route": "Cape of Good Hope (+9–14 days, ~$300k extra fuel per voyage)",
+        "price_impact": "Freight rates +30–80%; Suez closures redirect ~250+ vessels",
+        "historical_disruptions": [
+          { "year": "1956", "event": "Suez Crisis, nationalization by Nasser" },
+          { "year": "1967–75", "event": "Closed during Arab-Israeli wars" },
+          { "year": "2021", "event": "Ever Given grounding, 6 days, ~$10B/day global trade impact" },
+          { "year": "2023–24", "event": "Houthi attacks reroute ~50% of container traffic" }
+        ],
+        "current_risk_baseline": "high",
+        "strategic_notes": "Controls Europe-Asia trade and is a faster alternative to Cape route. Egypt depends on canal revenues (~$10B/year). Houthi disruption in 2024 caused major rerouting via Cape."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [42.5, 13.0], [43.5, 12.0], [44.0, 11.5], [44.5, 11.0], [45.0, 11.5]
+        ]
+      },
+      "properties": {
+        "id": "bab_el_mandeb",
+        "name": "Bab-el-Mandeb",
+        "short": "Bab-el-Mandeb",
+        "region": "Red Sea / Horn of Africa",
+        "keywords": ["bab el mandeb", "bab-el-mandeb", "mandeb", "red sea", "yemen", "djibouti", "houthi", "somalia"],
+        "daily_oil_mbd": 6.2,
+        "vessels_per_year": 21000,
+        "trade_pct_global": 10,
+        "width_km": 29,
+        "dependent_nations": [
+          { "country": "Europe", "pct": 60, "commodity": "Asia imports via Suez" },
+          { "country": "Gulf States", "pct": 100, "commodity": "Suez transit exports" }
+        ],
+        "commodities": ["crude oil", "LNG", "container goods", "grain"],
+        "alternative_route": "Cape of Good Hope (+9–14 days)",
+        "price_impact": "Works in tandem with Suez; disruption triggers same freight spike",
+        "historical_disruptions": [
+          { "year": "2023–24", "event": "Houthi missile and drone attacks on commercial shipping" }
+        ],
+        "current_risk_baseline": "high",
+        "strategic_notes": "Gateway to Suez Canal from the south. Yemen's Houthis can threaten with anti-ship missiles and drones. US-led naval coalition provides partial deterrence."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [103.8, 1.2], [103.5, 1.5], [103.0, 2.0], [102.0, 3.0],
+          [101.0, 4.0], [100.0, 5.0], [99.0, 6.0], [98.5, 7.0],
+          [97.5, 8.0], [96.5, 9.0], [95.5, 10.0]
+        ]
+      },
+      "properties": {
+        "id": "malacca",
+        "name": "Strait of Malacca",
+        "short": "Malacca",
+        "region": "Southeast Asia",
+        "keywords": ["malacca", "strait of malacca", "singapore", "indonesia", "malaysia", "south china sea"],
+        "daily_oil_mbd": 16,
+        "vessels_per_year": 83000,
+        "trade_pct_global": 40,
+        "width_km": 65,
+        "dependent_nations": [
+          { "country": "China", "pct": 80, "commodity": "energy imports" },
+          { "country": "Japan", "pct": 90, "commodity": "energy/goods" },
+          { "country": "South Korea", "pct": 85, "commodity": "energy/goods" }
+        ],
+        "commodities": ["crude oil", "LNG", "container goods", "coal", "electronics"],
+        "alternative_route": "Lombok/Sunda/Ombai Straits (+1–3 days)",
+        "price_impact": "Closure would be catastrophic for Northeast Asia; LNG/oil to China/Japan +$10–20/bbl",
+        "historical_disruptions": [
+          { "year": "2000s", "event": "Piracy peak, Lloyd's of London listed as war-risk zone" }
+        ],
+        "current_risk_baseline": "low",
+        "strategic_notes": "Busiest shipping lane on earth. China's 'Malacca Dilemma' — 80% of Chinese energy imports transit here. China is building pipeline alternatives (Myanmar, Central Asia) but no near-term substitute."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-79.5, 9.0], [-79.8, 8.5], [-80.0, 8.0], [-79.5, 7.5]
+        ]
+      },
+      "properties": {
+        "id": "panama",
+        "name": "Panama Canal",
+        "short": "Panama",
+        "region": "Central America",
+        "keywords": ["panama", "panama canal", "central america", "pacific", "atlantic"],
+        "daily_oil_mbd": 1.0,
+        "lng_cargoes_annual": 1000,
+        "vessels_per_year": 13000,
+        "trade_pct_global": 5,
+        "dependent_nations": [
+          { "country": "USA", "pct": 70, "commodity": "LNG exports to Asia" },
+          { "country": "Chile/Peru", "pct": 90, "commodity": "mining exports to Asia" }
+        ],
+        "commodities": ["LNG", "grain", "container goods", "copper", "cars"],
+        "alternative_route": "Cape Horn (+14–20 days) or land bridge across Panama",
+        "price_impact": "US LNG to Asia freight +$1–2/MMBtu; grain exports significantly impacted",
+        "historical_disruptions": [
+          { "year": "2023", "event": "Severe drought reduced water levels; 40% traffic reduction; $500M+ daily economic impact" }
+        ],
+        "current_risk_baseline": "medium",
+        "strategic_notes": "Critical for US LNG exports to Asia. Drought-driven water level drops are an increasing climate risk. Neopanamax locks handle larger vessels but still depth-limited."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [19.0, 35.0], [20.0, 33.0], [18.0, 30.0], [16.0, 26.0],
+          [14.0, 20.0], [12.0, 10.0], [10.0, 0.0], [8.0, -10.0],
+          [14.0, -25.0], [17.0, -34.0], [19.0, -35.0], [20.5, -34.0]
+        ]
+      },
+      "properties": {
+        "id": "cape_good_hope",
+        "name": "Cape of Good Hope",
+        "short": "Cape Route",
+        "region": "Southern Africa",
+        "keywords": ["cape of good hope", "cape route", "south africa", "cape town", "cape horn"],
+        "vessels_per_year": 18000,
+        "trade_pct_global": 8,
+        "commodities": ["crude oil", "LNG", "container goods", "bulk cargo"],
+        "alternative_route": "Suez Canal (saves 9–14 days)",
+        "price_impact": "Becomes primary route when Suez/Bab-el-Mandeb disrupted; freight +30–50%",
+        "historical_disruptions": [],
+        "current_risk_baseline": "low",
+        "strategic_notes": "The bypass route. Activation is an indicator of major disruption elsewhere. South Africa's Cape Town anchorage provides refueling. Route adds ~14 days and $300k+ per voyage vs Suez."
+      }
+    }
+  ]
+}

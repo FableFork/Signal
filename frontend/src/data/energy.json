@@ -1,0 +1,558 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [49.5, 25.1] },
+      "properties": {
+        "id": "ghawar",
+        "name": "Ghawar Oil Field",
+        "type": "oil_field",
+        "subtype": "supergiant",
+        "country": "Saudi Arabia",
+        "operator": "Saudi Aramco",
+        "capacity": "3.8M bbl/day",
+        "significance": "~4% of global oil supply; largest conventional oil field on earth",
+        "reserves": "~75 billion barrels remaining",
+        "keywords": ["ghawar", "saudi aramco", "saudi arabia", "riyadh", "eastern province"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "medium",
+        "price_impact": "Disruption would spike Brent $15–30/bbl minimum; no single asset has greater oil market impact",
+        "alternative_supply": "UAE spare capacity (3M bbl/day), Iraqi fields, strategic reserves (IEA 1.5B bbl)",
+        "primary_buyers": ["China", "Japan", "South Korea", "India"],
+        "risk_factors": "Missile/drone attack vulnerability (Abqaiq precedent); aging infrastructure (operational since 1948); Aramco IPO limits transparency"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [49.7, 25.9] },
+      "properties": {
+        "id": "abqaiq",
+        "name": "Abqaiq Processing Facility",
+        "type": "refinery",
+        "subtype": "processing_hub",
+        "country": "Saudi Arabia",
+        "operator": "Saudi Aramco",
+        "capacity": "Processes ~7% of global oil supply",
+        "significance": "World's largest oil processing plant; stabilizes Saudi crude before export",
+        "keywords": ["abqaiq", "saudi aramco", "saudi arabia", "buqyaq"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "high",
+        "price_impact": "Sept 2019 attack caused temporary 5.7M bbl/day production loss; Brent spiked 15% overnight",
+        "alternative_supply": "Saudi strategic reserves; can partially reroute through other terminals",
+        "risk_factors": "Proven drone/missile vulnerability — attacked by Houthis Sept 2019; single point of failure for Saudi oil exports"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [48.5, 26.2] },
+      "properties": {
+        "id": "ras_tanura",
+        "name": "Ras Tanura Terminal",
+        "type": "oil_terminal",
+        "subtype": "export_terminal",
+        "country": "Saudi Arabia",
+        "operator": "Saudi Aramco",
+        "capacity": "6–7M bbl/day export capacity",
+        "significance": "Largest oil export terminal in the world",
+        "keywords": ["ras tanura", "saudi aramco", "saudi arabia", "persian gulf"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "medium",
+        "price_impact": "Closure would immediately cut global oil supply 6–7%; Brent +$20+/bbl",
+        "alternative_supply": "Jubail, Yanbu (Red Sea) terminals; pipeline to bypass Hormuz",
+        "risk_factors": "Gulf location vulnerable to Iranian action; Yanbu pipeline (3.2M bbl/day) can partially bypass Hormuz if needed"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [51.5, 25.5] },
+      "properties": {
+        "id": "north_dome_south_pars",
+        "name": "North Dome / South Pars Gas Field",
+        "type": "lng_field",
+        "subtype": "supergiant_gas",
+        "country": "Qatar / Iran (shared)",
+        "operator": "QatarEnergy / NIOC",
+        "capacity": "Qatar: 77M tonnes LNG/year (world's largest exporter); Iran: ~10% of global gas reserves",
+        "significance": "World's largest single gas field; underpins Qatar's entire economy",
+        "keywords": ["north dome", "south pars", "qatar", "iran", "qatarenergy", "lng", "persian gulf", "doha"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "medium",
+        "price_impact": "Qatar LNG disruption would spike Asian LNG spot +30–50%; European gas +20–40%",
+        "alternative_supply": "Australia (Gorgon, Wheatstone), USA (Sabine Pass, Freeport), Russia LNG",
+        "primary_buyers": ["Japan", "South Korea", "China", "India", "UK", "Italy"],
+        "risk_factors": "Shared field with Iran creates geopolitical tension; dependent on Hormuz for LNG exports"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [47.8, 30.5] },
+      "properties": {
+        "id": "rumaila",
+        "name": "Rumaila Oil Field",
+        "type": "oil_field",
+        "subtype": "supergiant",
+        "country": "Iraq",
+        "operator": "BP / CNPC (via contract with Basra Oil Company)",
+        "capacity": "1.4M bbl/day",
+        "significance": "~1.5% of global supply; largest oil field in Iraq",
+        "keywords": ["rumaila", "basra", "iraq", "bp", "cnpc", "south iraq"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "high",
+        "price_impact": "Disruption adds $5–10/bbl to Brent; Iraq produces 4.5M bbl/day total",
+        "alternative_supply": "Saudi spare capacity, UAE, Kuwait",
+        "risk_factors": "Militia activity near Basra; infrastructure neglect; water injection challenges; export dependent on Basra terminal"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [53.0, 32.0] },
+      "properties": {
+        "id": "ahvaz_zagros",
+        "name": "Ahvaz / Khuzestan Oil Fields",
+        "type": "oil_field",
+        "subtype": "major_region",
+        "country": "Iran",
+        "operator": "NIOC (National Iranian Oil Company)",
+        "capacity": "~3.5M bbl/day gross potential; ~2.5M effective under sanctions",
+        "significance": "Iran's primary oil production region; ~3% of global supply",
+        "keywords": ["ahvaz", "khuzestan", "iran", "nioc", "tehran", "iranian oil"],
+        "sanctions": true,
+        "operational_status": "constrained",
+        "geopolitical_risk": "very_high",
+        "price_impact": "Sanctions removal would add 1–1.5M bbl/day to market; Brent -$5–10/bbl",
+        "alternative_supply": "Saudi, UAE spare capacity",
+        "risk_factors": "US/EU sanctions limit exports; covert exports via China, India, Syria; conflict with Israel risk; infrastructure decay"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [67.5, 45.5] },
+      "properties": {
+        "id": "tengiz",
+        "name": "Tengiz Oil Field",
+        "type": "oil_field",
+        "subtype": "supergiant",
+        "country": "Kazakhstan",
+        "operator": "TengizChevroil (Chevron 50%, ExxonMobil 25%, KazMunayGas 20%)",
+        "capacity": "720k bbl/day",
+        "significance": "Major Western investment in Central Asia; second largest in CIS",
+        "keywords": ["tengiz", "kazakhstan", "chevron", "exxonmobil", "cpc", "caspian"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "medium",
+        "price_impact": "CPC pipeline disruption (2022: 1M bbl/day cut) spiked Brent $3–5/bbl",
+        "alternative_supply": "Baku-Tbilisi-Ceyhan pipeline (partial); Russian routes create dependency risk",
+        "primary_buyers": ["Italy", "China", "Netherlands", "France"],
+        "risk_factors": "Exports depend on CPC pipeline through Russia (single chokepoint); Russia has leverage"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [2.0, 28.0] },
+      "properties": {
+        "id": "hassi_messaoud",
+        "name": "Hassi Messaoud",
+        "type": "oil_field",
+        "country": "Algeria",
+        "operator": "Sonatrach",
+        "capacity": "300k bbl/day",
+        "significance": "Algeria's largest oil field; exports primarily to Europe",
+        "keywords": ["hassi messaoud", "algeria", "sonatrach", "north africa"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "low",
+        "price_impact": "Moderate; Algeria supplies ~10% of European gas via Trans-Med pipeline",
+        "alternative_supply": "Libya, Nigeria, Middle East for European buyers",
+        "primary_buyers": ["Italy", "Spain", "France"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [2.5, 27.0] },
+      "properties": {
+        "id": "hassi_rmel",
+        "name": "Hassi R'Mel Gas Field",
+        "type": "gas_field",
+        "country": "Algeria",
+        "operator": "Sonatrach",
+        "capacity": "55 bcm/year peak; feeds 3 pipelines to Europe",
+        "significance": "Algeria's primary gas export hub; critical for Italy and Spain",
+        "keywords": ["hassi rmel", "algeria", "sonatrach", "algerian gas", "trans-med", "medgaz"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "low",
+        "price_impact": "Algeria supplies ~12% of European gas; disruption would pressure TTF prices +5–15%",
+        "alternative_supply": "Norwegian gas, LNG imports, Russian alternatives (political)",
+        "primary_buyers": ["Italy", "Spain", "Portugal"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [13.5, 28.5] },
+      "properties": {
+        "id": "libya_fields",
+        "name": "Libyan Oil Fields (Sirte Basin)",
+        "type": "oil_field",
+        "subtype": "major_region",
+        "country": "Libya",
+        "operator": "NOC (National Oil Corporation) — various foreign partners",
+        "capacity": "1.2M bbl/day (pre-conflict); currently ~1.1M bbl/day",
+        "significance": "High-quality light sweet crude; critical to Mediterranean refiners",
+        "keywords": ["libya", "noc", "sirte", "tripoli", "benghazi", "libyan oil"],
+        "sanctions": false,
+        "operational_status": "volatile",
+        "geopolitical_risk": "very_high",
+        "price_impact": "Libya production swings can move Brent $2–5/bbl; often cuts in line with political disputes",
+        "alternative_supply": "Algeria, Nigeria, North Sea for European buyers",
+        "risk_factors": "Ongoing civil conflict between east/west factions; frequent force majeure declarations; infrastructure used as political leverage"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [7.5, 5.5] },
+      "properties": {
+        "id": "niger_delta",
+        "name": "Niger Delta Oil Fields",
+        "type": "oil_field",
+        "subtype": "major_region",
+        "country": "Nigeria",
+        "operator": "Shell, TotalEnergies, ExxonMobil, Chevron (JVs with NNPC)",
+        "capacity": "1.5–2M bbl/day (chronic underperformance vs 2.5M bbl/day capacity)",
+        "significance": "Africa's largest oil producer; Bonny Light crude premium grade",
+        "keywords": ["niger delta", "nigeria", "bonny", "nnpc", "shell nigeria", "west africa"],
+        "sanctions": false,
+        "operational_status": "underperforming",
+        "geopolitical_risk": "high",
+        "price_impact": "Outages common; removal of fuel subsidy 2023 changed domestic dynamics",
+        "alternative_supply": "Angola, Equatorial Guinea, Middle East for European/Asian buyers",
+        "risk_factors": "Pipeline vandalism, oil theft (bunkering), militant activity, aging infrastructure, community conflicts"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [2.0, 57.0] },
+      "properties": {
+        "id": "north_sea",
+        "name": "North Sea Oil & Gas Fields",
+        "type": "oil_field",
+        "subtype": "major_region",
+        "country": "UK / Norway",
+        "operator": "Equinor, Shell, BP, TotalEnergies and others",
+        "capacity": "UK: ~600k bbl/day; Norway: ~2M bbl/day oil equivalent",
+        "significance": "European domestic production; Brent crude benchmark pricing; Norwegian gas critical for Europe",
+        "keywords": ["north sea", "norway", "uk", "equinor", "brent", "forties", "norwegian gas"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "low",
+        "price_impact": "North Sea maintenance shutdowns affect Brent dated; Norwegian gas strikes can spike TTF 10–20%",
+        "alternative_supply": "LNG imports, Russian pipeline alternatives (now limited), Algerian gas",
+        "risk_factors": "Mature basin — declining production; weather-dependent operations; labor strike risk (Norway)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-101.0, 32.0] },
+      "properties": {
+        "id": "permian_basin",
+        "name": "Permian Basin",
+        "type": "oil_field",
+        "subtype": "shale_basin",
+        "country": "USA",
+        "operator": "ExxonMobil, Pioneer (acquired), Chevron, ConocoPhillips, Occidental",
+        "capacity": "5.9M bbl/day (as of 2024); growing",
+        "significance": "World's most productive oil region; key to US energy independence and global swing supply",
+        "keywords": ["permian", "permian basin", "texas", "new mexico", "west texas", "exxon", "chevron", "wti"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "very_low",
+        "price_impact": "US shale acts as global supply buffer; Permian growth has capped oil prices structurally",
+        "alternative_supply": "Other US shale (Bakken, Eagle Ford); global spare capacity",
+        "primary_buyers": ["USA domestic", "Asia via Gulf Coast exports"],
+        "risk_factors": "Water scarcity increasing; pipeline capacity constraints; regulatory environment"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [73.0, 22.5] },
+      "properties": {
+        "id": "india_mundra_jamnagar",
+        "name": "Jamnagar Refinery Complex",
+        "type": "refinery",
+        "country": "India",
+        "operator": "Reliance Industries",
+        "capacity": "1.24M bbl/day — world's largest refinery complex",
+        "significance": "India's refining hub; significant Russian crude processer since 2022",
+        "keywords": ["jamnagar", "reliance", "india", "gujarat", "indian refinery"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "low",
+        "price_impact": "India as swing buyer of discounted Russian crude; Reliance helps set Asian refining margins",
+        "risk_factors": "Dependent on crude imports; increasing Russian crude share post-2022 creates geopolitical sensitivity"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [129.0, 33.5] },
+      "properties": {
+        "id": "ulsan_refinery",
+        "name": "Ulsan Refinery Hub",
+        "type": "refinery",
+        "country": "South Korea",
+        "operator": "SK Innovation / S-Oil",
+        "capacity": "1.5M bbl/day combined (SK + S-Oil)",
+        "significance": "Northeast Asia's major refining hub; Saudi Aramco owns 17% of S-Oil",
+        "keywords": ["ulsan", "south korea", "sk energy", "s-oil", "korean refinery"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "low",
+        "price_impact": "Heavily exposed to Middle East supply disruption; Hormuz closure is existential risk",
+        "risk_factors": "North Korea proximity; 100% import-dependent for crude; Saudi Aramco strategic partnership"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [121.5, 30.5] },
+      "properties": {
+        "id": "zhoushan_refinery",
+        "name": "Zhoushan / Ningbo Refinery Hub",
+        "type": "refinery",
+        "country": "China",
+        "operator": "Zhejiang Petrochemical / CNOOC",
+        "capacity": "800k–1M bbl/day combined",
+        "significance": "China's new private refining capacity; Zhejiang Petrochemical is one of world's newest mega-refineries",
+        "keywords": ["zhoushan", "ningbo", "zhejiang", "china", "chinese refinery", "cnooc"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "medium",
+        "price_impact": "China's refining expansion affects Asian product markets; teapot refineries (Shandong) also significant",
+        "risk_factors": "Taiwan Strait tension; US sanctions on Chinese energy entities increasing"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-93.8, 29.8] },
+      "properties": {
+        "id": "sabine_pass",
+        "name": "Sabine Pass LNG Terminal",
+        "type": "lng_terminal",
+        "subtype": "export",
+        "country": "USA",
+        "operator": "Cheniere Energy",
+        "capacity": "~30 MTPA export capacity",
+        "significance": "World's largest LNG export terminal; key to US LNG market emergence",
+        "keywords": ["sabine pass", "cheniere", "lng", "louisiana", "us lng", "freeport"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "low",
+        "price_impact": "Freeport explosion (2022) removed 20 MTPA for months — European TTF +15%; any US LNG outage now significant",
+        "primary_buyers": ["UK", "France", "Netherlands", "Spain", "South Korea", "China"],
+        "risk_factors": "Hurricane risk; fire/explosion risk (Freeport 2022 precedent); US export policy risk"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [56.4, 25.4] },
+      "properties": {
+        "id": "ras_laffan",
+        "name": "Ras Laffan Industrial City",
+        "type": "lng_terminal",
+        "subtype": "export",
+        "country": "Qatar",
+        "operator": "QatarEnergy",
+        "capacity": "77 MTPA (expanding to 126 MTPA by 2027)",
+        "significance": "World's largest LNG export hub; anchor of Qatar's wealth",
+        "keywords": ["ras laffan", "qatar", "qatarenergy", "lng", "doha", "qatar lng"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "medium",
+        "price_impact": "Any disruption would be catastrophic for global LNG markets; Asian JCC +$5–10/MMBtu",
+        "primary_buyers": ["Japan", "South Korea", "China", "India", "UK", "Belgium"],
+        "risk_factors": "Proximity to Hormuz; geopolitical position between Iran and Saudi Arabia; extreme concentration of output"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [114.0, -22.5] },
+      "properties": {
+        "id": "north_west_shelf",
+        "name": "NW Shelf / Gorgon / Wheatstone LNG",
+        "type": "lng_terminal",
+        "subtype": "export",
+        "country": "Australia",
+        "operator": "Chevron, Shell, Woodside",
+        "capacity": "~60 MTPA combined (Gorgon + Wheatstone + NW Shelf)",
+        "significance": "Australia = world's largest or 2nd LNG exporter; key for Japan/Korea",
+        "keywords": ["northwest shelf", "gorgon", "wheatstone", "australia", "woodside", "chevron australia", "lng australia"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "low",
+        "price_impact": "Operational disruptions (cyclones, strikes) move Asian LNG spot prices; 2023 Chevron strikes raised JKM $1–2/MMBtu",
+        "primary_buyers": ["Japan", "China", "South Korea"],
+        "risk_factors": "Cyclone exposure; worker strike risk; ageing facilities (NW Shelf)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [37.0, 40.0] },
+      "properties": {
+        "id": "baku_tbilisi_ceyhan",
+        "name": "BTC Pipeline (Baku–Ceyhan)",
+        "type": "pipeline",
+        "country": "Azerbaijan / Georgia / Turkey",
+        "operator": "BP-led consortium",
+        "capacity": "1.2M bbl/day",
+        "significance": "Main export route for Caspian oil bypassing Russia and Iran",
+        "keywords": ["btc", "baku ceyhan", "baku tbilisi ceyhan", "caspian pipeline", "azerbaijan", "georgia pipeline"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "medium",
+        "price_impact": "Key Azerbaijan/Kazakh export route; disruption affects European Caspian supply",
+        "risk_factors": "PKK attack history in Turkey; earthquake risk in Caucasus; 2008 Russia-Georgia war disrupted briefly"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [37.0, 50.0] },
+      "properties": {
+        "id": "druzhba_pipeline",
+        "name": "Druzhba Pipeline",
+        "type": "pipeline",
+        "country": "Russia / Belarus / Ukraine / EU",
+        "operator": "Transneft (Russia)",
+        "capacity": "1.2M bbl/day (North branch, still partially active)",
+        "significance": "Historically the world's longest pipeline; supplied 25% of EU crude before 2022",
+        "keywords": ["druzhba", "russian pipeline", "transneft", "belarus", "ukraine pipeline", "russia oil"],
+        "sanctions": true,
+        "operational_status": "partially_disrupted",
+        "geopolitical_risk": "very_high",
+        "price_impact": "EU embargo on Russian oil (Dec 2022) diverted most flows; Hungary/Slovakia still receive some; each disruption raises Ural-Brent spread",
+        "risk_factors": "Ukraine conflict; EU sanctions; Hungary as exception clause; Druzhba contamination incident (2019)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [37.5, 65.0] },
+      "properties": {
+        "id": "yamal_ng",
+        "name": "Yamal LNG / Yamal Gas Fields",
+        "type": "lng_terminal",
+        "subtype": "export",
+        "country": "Russia",
+        "operator": "Novatek",
+        "capacity": "16.5 MTPA (Yamal LNG); Arctic LNG 2 under sanctions",
+        "significance": "Russia's main LNG export project; Arctic 2 under full Western sanctions",
+        "keywords": ["yamal", "novatek", "russia lng", "arctic lng", "sabetta", "russian gas"],
+        "sanctions": true,
+        "operational_status": "constrained",
+        "geopolitical_risk": "very_high",
+        "price_impact": "Western sanctions froze Arctic LNG 2; remaining Yamal LNG serves Asian buyers; reduces European supply options",
+        "primary_buyers": ["China", "India", "Japan (reduced)", "Belgium (transit)"],
+        "risk_factors": "Full US/EU sanctions; tanker fleet constraints; ice-class vessel shortage; ice season limits"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [30.0, 48.5] },
+      "properties": {
+        "id": "ukraine_transit",
+        "name": "Ukraine Gas Transit System",
+        "type": "pipeline",
+        "country": "Ukraine / Europe",
+        "operator": "GTSOU (Gas Transmission System Operator of Ukraine)",
+        "capacity": "40 bcm/year residual capacity",
+        "significance": "Remaining gas transit corridor to Central/Eastern Europe; transit contract expired Jan 2025",
+        "keywords": ["ukraine gas", "ukraine transit", "gtsou", "central europe gas", "slovakia gas", "austria gas"],
+        "sanctions": false,
+        "operational_status": "expired_contract",
+        "geopolitical_risk": "very_high",
+        "price_impact": "Contract expiry Jan 2025 ended transit; Slovakia/Hungary/Austria most affected; TTF volatile on news",
+        "risk_factors": "Active war zone; contract expiry eliminated flows; Europe sought alternatives successfully"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [33.5, 49.0] },
+      "properties": {
+        "id": "zaporizhzhia",
+        "name": "Zaporizhzhia Nuclear Power Plant",
+        "type": "nuclear",
+        "country": "Ukraine (occupied by Russia)",
+        "operator": "Energoatom (Ukraine) / Rosatom oversight under occupation",
+        "capacity": "6 × 1,000 MW reactors (largest in Europe)",
+        "significance": "Europe's largest nuclear plant; under Russian military control since March 2022",
+        "keywords": ["zaporizhzhia", "znpp", "ukraine nuclear", "rosatom", "nuclear ukraine", "zaporozhye"],
+        "sanctions": false,
+        "operational_status": "shutdown_standby",
+        "geopolitical_risk": "critical",
+        "price_impact": "Nuclear incident would devastate European power markets; indirect impact on gas demand and European energy security",
+        "risk_factors": "Active conflict zone; repeated shelling; cooling system vulnerability; IAEA monitoring under constraints; nuclear safety incidents possible"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [103.5, 1.3] },
+      "properties": {
+        "id": "singapore_terminal",
+        "name": "Singapore Oil Hub",
+        "type": "oil_terminal",
+        "subtype": "trading_hub",
+        "country": "Singapore",
+        "operator": "Multiple — Vopak, ExxonMobil, Shell, PetroChina",
+        "capacity": "~160M barrels storage; ~1M bbl/day refining",
+        "significance": "Asia's primary oil trading and storage hub; benchmarks Asian crude pricing",
+        "keywords": ["singapore", "singapore oil", "jurong island", "asia oil hub", "vopak"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "low",
+        "price_impact": "Singapore storage inventory levels are Asian market indicator; Malacca closure would immediately impact",
+        "risk_factors": "Extreme Malacca Strait dependency; land scarcity limits expansion"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [4.5, 51.9] },
+      "properties": {
+        "id": "rotterdam",
+        "name": "Port of Rotterdam / Energy Hub",
+        "type": "oil_terminal",
+        "subtype": "trading_hub",
+        "country": "Netherlands",
+        "operator": "Port of Rotterdam Authority; Shell, BP, Vitol, Trafigura terminals",
+        "capacity": "Europe's largest port; 7.5M bbl/day throughput",
+        "significance": "European energy pricing benchmark; LNG import hub (Gate terminal); oil product distribution center",
+        "keywords": ["rotterdam", "netherlands", "gate terminal", "europe oil hub", "ats"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "very_low",
+        "price_impact": "Rotterdam product cracks are global benchmark; ARA (Amsterdam-Rotterdam-Antwerp) inventory is key market indicator",
+        "risk_factors": "Climate flooding risk; transition away from fossil fuels strategy by 2050"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-97.0, 30.0] },
+      "properties": {
+        "id": "houston_ship_channel",
+        "name": "Houston Ship Channel / Gulf Coast Energy Hub",
+        "type": "oil_terminal",
+        "subtype": "trading_hub",
+        "country": "USA",
+        "operator": "Multiple — Enterprise Products, Magellan, Philips 66, Valero",
+        "capacity": "Largest US energy export complex; major LNG, crude, products hub",
+        "significance": "US Gulf Coast is now world's largest crude exporter; prices WTI benchmark",
+        "keywords": ["houston", "gulf coast", "wti", "texas", "corpus christi", "galveston", "beaumont"],
+        "sanctions": false,
+        "operational_status": "operational",
+        "geopolitical_risk": "very_low",
+        "price_impact": "Hurricane disruptions (Harvey 2017) spike WTI; Cushing OK inventory drives WTI futures",
+        "risk_factors": "Hurricane season (June–November); industrial accident risk; climate flooding"
+      }
+    }
+  ]
+}

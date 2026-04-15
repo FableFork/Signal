@@ -6,9 +6,6 @@ const BACKEND_PORT = process.env.BACKEND_PORT || '8001'
 
 export default defineConfig({
   plugins: [react()],
-  optimizeDeps: {
-    exclude: ['react-globe.gl'],
-  },
   server: {
     port: 5173,
     proxy: {
