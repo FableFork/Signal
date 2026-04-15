@@ -283,8 +283,7 @@ async def run_analysis(article_id: int, bg: BackgroundTasks, current_user: dict 
     if (not body or _is_blocked(body)) and art.get("url"):
         body = await get_article_body_full(art["url"])
 
-    user_api_key = await get_user_setting(uid, "anthropic_api_key")
-    result = await analyze_article(art["guid"], art["title"], body, api_key=user_api_key)
+    result = await analyze_article(art["guid"], art["title"], body, user_id=uid)
     return result
 
 

@@ -2,10 +2,10 @@ import anthropic
 import json
 import aiosqlite
 from datetime import datetime
-from database import get_setting, DB_PATH
+from database import get_user_setting, DB_PATH, USER_SETTING_DEFAULTS
 
 
-async def analyze_article(article_guid: str, title: str, body: str, api_key: str = None) -> dict:
+async def analyze_article(article_guid: str, title: str, body: str, user_id: int = 1) -> dict:
     """Run Claude analysis on an article. Returns cached result if exists."""
     # Check cache first
     async with aiosqlite.connect(DB_PATH) as db:
@@ -17,15 +17,13 @@ async def analyze_article(article_guid: str, title: str, body: str, api_key: str
             if row:
                 return {"cached": True, "result": json.loads(row[0])}
 
-    # Use provided key, fall back to global setting
-    if not api_key:
-        api_key = await get_setting("anthropic_api_key")
+    api_key = await get_user_setting(user_id, "anthropic_api_key")
     if not api_key:
         return {"error": "No API key configured"}
 
-    model = await get_setting("claude_model") or "claude-sonnet-4-20250514"
-    max_tokens = int(await get_setting("max_tokens") or "2048")
-    system_prompt = await get_setting("article_system_prompt") or ""
+    model = await get_user_setting(user_id, "claude_model") or "claude-sonnet-4-20250514"
+    max_tokens = int(await get_user_setting(user_id, "max_tokens") or "2048")
+    system_prompt = await get_user_setting(user_id, "article_system_prompt") or USER_SETTING_DEFAULTS["article_system_prompt"]
 
     content = f"Title: {title}\n\n{body[:4000]}"
 
@@ -39,7 +37,6 @@ async def analyze_article(article_guid: str, title: str, body: str, api_key: str
         )
         raw = msg.content[0].text.strip()
 
-        # Strip markdown code fences if present
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -48,7 +45,6 @@ async def analyze_article(article_guid: str, title: str, body: str, api_key: str
 
         result = json.loads(raw)
 
-        # Cache result
         async with aiosqlite.connect(DB_PATH) as db:
             await db.execute(
                 "INSERT OR REPLACE INTO ai_analyses (article_guid, result_json, created_at) VALUES (?,?,?)",
