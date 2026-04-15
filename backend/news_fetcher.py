@@ -2,11 +2,14 @@ import feedparser
 import httpx
 import json
 import asyncio
+import logging
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
 from database import aiosqlite, DB_PATH
 from websocket_manager import ws_manager
 import hashlib
+
+logger = logging.getLogger(__name__)
 
 
 def _make_guid(url: str, title: str) -> str:
@@ -163,8 +166,10 @@ async def run_fetch_cycle():
 
     enabled = await get_all_enabled_sources()
     if not enabled:
+        logger.info("Fetch cycle: no enabled sources")
         return
 
+    logger.info(f"Fetch cycle: pulling {len(enabled)} sources")
     tasks = [fetch_feed(s) for s in enabled]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -172,8 +177,12 @@ async def run_fetch_cycle():
     for r in results:
         if isinstance(r, list):
             all_articles.extend(r)
+        elif isinstance(r, Exception):
+            logger.warning(f"Feed fetch error: {r}")
 
     new_ones = await store_articles(all_articles)
+    logger.info(f"Fetch cycle: {len(all_articles)} seen, {len(new_ones)} new")
+
     for art in new_ones:
         await ws_manager.broadcast({"type": "new_article", "article": art})
 
@@ -182,16 +191,23 @@ async def run_fetch_cycle():
     if auto == "true" and new_ones:
         api_key = await get_user_setting(1, "anthropic_api_key")
         if api_key and api_key not in ("***", ""):
-            # Cap per cycle to avoid flooding the API — oldest unanalyzed articles first
             to_analyze = new_ones[:15]
+            analyzed = 0
             for art in to_analyze:
                 try:
-                    await analyze_article(
+                    result = await analyze_article(
                         art["guid"], art["title"], art.get("body", ""), user_id=1
                     )
-                    await asyncio.sleep(0.5)  # stay within rate limits
-                except Exception:
-                    pass
+                    if not result.get("error"):
+                        analyzed += 1
+                    await asyncio.sleep(0.5)
+                except Exception as e:
+                    logger.warning(f"Auto-analyze failed for '{art['title'][:40]}': {e}")
+            logger.info(f"Auto-analyzed {analyzed}/{len(to_analyze)} new articles")
+        else:
+            logger.info("Auto-analyze skipped: no API key set")
+    elif auto != "true":
+        pass  # silent — user intentionally disabled it
 
     return len(new_ones)
 
