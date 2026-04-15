@@ -399,7 +399,7 @@ const LAYER_DEFS = [
 function LayerControls({
   layers, onToggle, hoursWindow, onHoursChange,
   influenceMin, onInfluenceChange,
-  infraCount, lastUpdated, refreshing, onRefresh,
+  infraCount, lastUpdated, refreshing, refreshStatus, onRefresh,
 }) {
   const S = {
     panel: {
@@ -484,6 +484,12 @@ function LayerControls({
         <div>{infraCount.toLocaleString()} SITES</div>
         <div style={{ marginTop: 2 }}>UPDATED {lastUpdated ? timeAgo(lastUpdated).toUpperCase() : 'NEVER'}</div>
       </div>
+
+      {refreshStatus && (
+        <div style={{ marginTop: 5, fontSize: 9, color: '#666677', lineHeight: 1.4 }}>
+          {refreshStatus}
+        </div>
+      )}
 
       <button
         onClick={onRefresh}
@@ -776,6 +782,8 @@ export default function Globe() {
   const [selected, setSelected] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [refreshStatus, setRefreshStatus] = useState('')
+  const pollRef = useRef(null)
 
   // Sync colors each render
   _gc.bullish = settings?.color_globe_news_bullish || '#00ff88'
@@ -800,6 +808,7 @@ export default function Globe() {
       .then(r => r.json())
       .then(setWorldGeoJSON)
       .catch(() => {})
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [])
 
   const filteredArticles = useMemo(() => {
@@ -808,23 +817,43 @@ export default function Globe() {
   }, [articles, hoursWindow])
 
   const handleRefresh = useCallback(async () => {
+    if (pollRef.current) clearInterval(pollRef.current)
     setRefreshing(true)
+    setRefreshStatus('Querying OpenStreetMap...')
+    const prevCount = infrastructure.length
+
     try {
       await api.refreshInfrastructure()
-      setTimeout(() => {
-        api.getInfrastructure({ min_influence: 1 }).then(data => {
+    } catch {
+      setRefreshing(false)
+      setRefreshStatus('Refresh request failed')
+      return
+    }
+
+    let elapsed = 0
+    pollRef.current = setInterval(async () => {
+      elapsed += 30
+      try {
+        const data = await api.getInfrastructure({ min_influence: 1 })
+        const newCount = data.length
+        setRefreshStatus(`Fetching... ${newCount} sites found (${elapsed}s)`)
+        if (newCount > prevCount || elapsed >= 600) {
           setInfrastructure(data)
           if (data.length > 0) {
             const latest = data.reduce((a, b) => (a.fetched_at > b.fetched_at ? a : b), data[0])
             setLastUpdated(latest.fetched_at)
           }
+          clearInterval(pollRef.current)
+          pollRef.current = null
           setRefreshing(false)
-        }).catch(() => setRefreshing(false))
-      }, 4000)
-    } catch {
-      setRefreshing(false)
-    }
-  }, [])
+          setRefreshStatus(`Done — ${newCount} sites loaded`)
+          setTimeout(() => setRefreshStatus(''), 5000)
+        }
+      } catch {
+        // keep polling
+      }
+    }, 30000)
+  }, [infrastructure.length])
 
   const toggleLayer = useCallback((key) => {
     setLayers(prev => ({ ...prev, [key]: !prev[key] }))
@@ -895,6 +924,7 @@ export default function Globe() {
           infraCount={infrastructure.length}
           lastUpdated={lastUpdated}
           refreshing={refreshing}
+          refreshStatus={refreshStatus}
           onRefresh={handleRefresh}
         />
       </div>

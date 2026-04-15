@@ -115,9 +115,9 @@ export default function App() {
 
   return (
     <AppContext.Provider value={ctx}>
-      <div style={{ width: '100vw', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <NavBar tab={tab} setTab={setTab} connected={connected} unreadCount={unreadCount} />
-        <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
           {tab === 'dashboard' && <Dashboard />}
           {tab === 'daily' && <Daily />}
           {tab === 'globe' && <Globe />}
