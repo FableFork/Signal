@@ -576,7 +576,7 @@ function FlightsLayer({ flights, density, onSelect, selectedIcao }) {
   return subset.map(f => {
     if (!f.lat || !f.lng) return null
     const isSelected = f.icao24 === selectedIcao
-    const color = isSelected ? '#ffffff' : (f.is_cargo ? '#ffaa00' : _gc.flight)
+    const color = isSelected ? '#ffffff' : (f.is_cargo ? '#ff8800' : _gc.flight)
     return (
       <CircleMarker
         key={f.icao24}
@@ -586,9 +586,9 @@ function FlightsLayer({ flights, density, onSelect, selectedIcao }) {
         eventHandlers={{ click: () => onSelect({ type: 'flight', flight: f }) }}
       >
         <Tooltip sticky direction="top" className="arc-tooltip" pane="tooltipPane">
-          <div style={{ fontFamily: 'monospace', fontSize: 10, background: '#0a0a0f', border: `1px solid ${_gc.flight}`, padding: '4px 8px', borderRadius: 3, color: _gc.flight }}>
+          <div style={{ fontFamily: 'monospace', fontSize: 10, background: '#0a0a0f', border: `1px solid ${f.is_cargo ? '#ff8800' : _gc.flight}`, padding: '4px 8px', borderRadius: 3, color: f.is_cargo ? '#ff8800' : _gc.flight }}>
             {f.callsign}
-            {f.is_cargo && <span style={{ color: '#ffaa00', marginLeft: 6 }}>CARGO</span>}
+            {f.is_cargo && <span style={{ color: '#ff8800', marginLeft: 6 }}>CARGO</span>}
             <span style={{ color: '#666677', marginLeft: 6 }}>{f.country}</span>
             {f.altitude_ft != null && <div style={{ color: '#666677', marginTop: 2 }}>{f.altitude_ft.toLocaleString()}ft · {f.speed_kts}kts</div>}
           </div>
@@ -616,6 +616,7 @@ function LayerControls({
   influenceMin, onInfluenceChange,
   trackingDensity, onDensityChange,
   infraCount, lastUpdated, refreshing, refreshStatus, onRefresh,
+  vesselCount, flightCount,
 }) {
   const S = {
     panel: {
@@ -655,8 +656,18 @@ function LayerControls({
             style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}
             onClick={() => onToggle(key)}
           >
-            <div style={S.dot(color, layers[key])} />
+            {key === 'flights' ? (
+              <span style={{ display: 'flex', gap: 2 }}>
+                <div style={S.dot(color, layers[key])} />
+                <div style={S.dot('#ff8800', layers[key])} />
+              </span>
+            ) : (
+              <div style={S.dot(color, layers[key])} />
+            )}
             <span style={{ color: layers[key] ? '#e8e8f0' : '#555566' }}>{label}</span>
+            {key === 'flights' && layers[key] && (
+              <span style={{ color: '#333344', fontSize: 9 }}>pax · cargo</span>
+            )}
           </div>
           <div style={S.toggle(layers[key])} onClick={() => onToggle(key)}>
             <div style={S.knob(layers[key])} />
@@ -707,6 +718,10 @@ function LayerControls({
 
       <div style={{ ...S.muted, color: '#444455' }}>
         <div>{infraCount.toLocaleString()} SITES</div>
+        <div style={{ marginTop: 2 }}>
+          {flightCount.toLocaleString()} FLIGHTS ·{' '}
+          {vesselCount > 0 ? `${vesselCount.toLocaleString()} VESSELS` : <span style={{ color: '#552222' }}>NO VESSELS</span>}
+        </div>
         <div style={{ marginTop: 2 }}>UPDATED {lastUpdated ? timeAgo(lastUpdated).toUpperCase() : 'NEVER'}</div>
       </div>
 
@@ -848,10 +863,12 @@ function VesselPanel({ selected, S }) {
 
 function FlightPanel({ selected, S }) {
   const f = selected.flight
+  const flightColor = f.is_cargo ? '#ff8800' : _gc.flight
+  const flightLabel = f.is_cargo ? 'CARGO' : 'PASSENGER'
   return (
     <>
       <div style={{ marginBottom: 12 }}>
-        <span style={S.tag(_gc.flight)}>CARGO FLIGHT</span>
+        <span style={S.tag(flightColor)}>{flightLabel} FLIGHT</span>
         {f.country && <span style={{ ...S.tag('#333344'), marginLeft: 6 }}>{f.country}</span>}
       </div>
       <div style={S.section}>
@@ -1240,17 +1257,23 @@ export default function Globe() {
 
     // Clear trail when nothing selected
 
-    // Live tracking — initial fetch + 60s poll
-    const fetchTracking = () => {
-      api.getFlights().then(d => setFlights(d.flights || [])).catch(() => {})
-      api.getVessels().then(d => setVessels(d.vessels || [])).catch(() => {})
+    // Live tracking — initial fetch, then poll every 15min (60s retry if data is empty)
+    let trackingTimer = null
+    const scheduleTrackingFetch = (delayMs) => {
+      if (trackingTimer) clearTimeout(trackingTimer)
+      trackingTimer = setTimeout(async () => {
+        let gotFlights = 0, gotVessels = 0
+        try { const d = await api.getFlights(); const f = d.flights || []; setFlights(f); gotFlights = f.length } catch {}
+        try { const d = await api.getVessels(); const v = d.vessels || []; setVessels(v); gotVessels = v.length } catch {}
+        // Retry quickly if either came back empty; otherwise wait full 15 min
+        scheduleTrackingFetch(gotFlights === 0 || gotVessels === 0 ? 60000 : 900000)
+      }, delayMs)
     }
-    fetchTracking()
-    const trackingInterval = setInterval(fetchTracking, 900000) // 15 min
+    scheduleTrackingFetch(0)
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current)
-      clearInterval(trackingInterval)
+      if (trackingTimer) clearTimeout(trackingTimer)
     }
   }, [])
 
@@ -1414,6 +1437,8 @@ export default function Globe() {
           trackingDensity={trackingDensity}
           onDensityChange={setTrackingDensity}
           infraCount={infrastructure.length}
+          vesselCount={vessels.length}
+          flightCount={flights.length}
           lastUpdated={lastUpdated}
           refreshing={refreshing}
           refreshStatus={refreshStatus}

@@ -482,14 +482,19 @@ async def refresh_infrastructure(background_tasks: BackgroundTasks):
 
 @app.get("/api/globe/flights")
 async def get_flights():
-    """Return cached cargo flight positions from OpenSky Network."""
-    return get_flights_data()
+    data = get_flights_data()
+    if data["count"] == 0:
+        # No cached data yet — kick off a fresh fetch and return empty
+        asyncio.create_task(refresh_flights())
+    return data
 
 
 @app.get("/api/globe/vessels")
 async def get_vessels():
-    """Return cached vessel positions from AIS stream."""
-    return get_vessels_data()
+    data = get_vessels_data()
+    if data["count"] == 0:
+        asyncio.create_task(refresh_vessels())
+    return data
 
 
 @app.post("/api/globe/tracking/start")

@@ -128,23 +128,43 @@ async def get_flight_history(icao24: str) -> list:
 
 # ─── Vessels (aisstream.io — 45s snapshot, global) ────────────────────────────
 
-VESSEL_TYPES = set(range(70, 90))  # tankers, bulk, container, general cargo
+VESSEL_TYPES = set(range(60, 100))  # all commercial: passenger(60-69), cargo/tanker(70-89), other(90-99)
+
+# Bounding box strategies — tried in order until one returns vessels.
+# Strategy 1: Global (paid tier or premium free accounts)
+# Strategy 2: Two hemispheres (may work on mid-tier)
+# Strategy 3: Major chokepoints only (conservative free tier)
+AIS_BBOXES = [
+    # Try 1: Global
+    [[[-90.0, -180.0], [90.0, 180.0]]],
+    # Try 2: Split into East/West hemispheres
+    [
+        [[-60.0, -180.0], [75.0, 0.0]],    # Western hemisphere
+        [[-60.0, 0.0],    [75.0, 180.0]],  # Eastern hemisphere
+    ],
+    # Try 3: Key chokepoints + major lanes (lowest bandwidth, free tier safe)
+    [
+        [[22.0, 25.0],    [32.0, 43.0]],   # Suez Canal + Red Sea
+        [[22.0, 54.0],    [27.5, 60.0]],   # Strait of Hormuz
+        [[0.0,  95.0],    [8.0, 107.0]],   # Strait of Malacca
+        [[8.0, -82.0],    [10.5, -79.0]],  # Panama Canal
+        [[12.0, 42.0],    [16.0, 48.0]],   # Bab-el-Mandeb
+        [[51.0, -3.0],    [52.5, 5.0]],    # English Channel
+        [[-6.0, -10.0],   [37.0, 6.0]],    # Gibraltar + Med west
+        [[-40.0, -60.0],  [-30.0, -35.0]], # South Atlantic
+    ],
+]
 
 
-async def refresh_vessels() -> None:
-    global _vessels, _vessels_updated, _last_vessel_history_write
-    if not _ais_api_key:
-        logger.debug("Vessel refresh skipped: no AIS API key")
-        return
-
+async def _ais_snapshot(bboxes: list) -> dict:
+    """Open one WebSocket connection, subscribe to given bboxes, collect for AIS_SNAPSHOT_SECONDS."""
     import websockets
 
     subscribe = json.dumps({
         "APIKey": _ais_api_key,
-        "BoundingBoxes": [[[-90.0, -180.0], [90.0, 180.0]]],  # global
+        "BoundingBoxes": bboxes,
         "FilterMessageTypes": ["PositionReport"],
     })
-
     snapshot: dict = {}
     try:
         async with websockets.connect(
@@ -155,7 +175,6 @@ async def refresh_vessels() -> None:
         ) as ws:
             await ws.send(subscribe)
             deadline = asyncio.get_event_loop().time() + AIS_SNAPSHOT_SECONDS
-            logger.info("AIS snapshot started (global, 45s)")
 
             while asyncio.get_event_loop().time() < deadline:
                 if len(snapshot) >= AIS_MAX_VESSELS:
@@ -171,16 +190,18 @@ async def refresh_vessels() -> None:
                     if not mmsi:
                         continue
                     ship_type = int(meta.get("ShipType") or 0)
-                    if ship_type not in VESSEL_TYPES and ship_type != 0:
-                        continue
                     lat = meta.get("latitude")
                     lng = meta.get("longitude")
                     if not lat or not lng:
                         continue
+                    # Require moving vessels — filter out anchored/stationary (SOG < 0.5 kts)
+                    sog = pos.get("Sog") or 0
+                    if sog < 0.3:
+                        continue
                     existing = _vessels.get(mmsi, {})
                     snapshot[mmsi] = {
                         "mmsi": mmsi,
-                        "name": existing.get("name", ""),
+                        "name": meta.get("ShipName", existing.get("name", "")).strip(),
                         "ship_type": ship_type,
                         "destination": existing.get("destination", ""),
                         "flag": existing.get("flag", ""),
@@ -188,16 +209,35 @@ async def refresh_vessels() -> None:
                         "lat": round(lat, 4),
                         "lng": round(lng, 4),
                         "heading": pos.get("TrueHeading") or pos.get("Cog"),
-                        "speed_kts": pos.get("Sog"),
+                        "speed_kts": round(sog, 1),
                         "updated": datetime.now(timezone.utc).isoformat(),
                     }
                 except asyncio.TimeoutError:
                     break
                 except Exception:
                     pass
-
     except Exception as e:
         logger.warning(f"AIS snapshot error: {e}")
+    return snapshot
+
+
+async def refresh_vessels() -> None:
+    global _vessels, _vessels_updated, _last_vessel_history_write
+    if not _ais_api_key:
+        logger.warning("Vessel refresh skipped: no AIS API key configured in settings")
+        return
+
+    snapshot: dict = {}
+
+    # Try each bbox set until we get data
+    for i, bboxes in enumerate(AIS_BBOXES):
+        label = "global" if i == 0 else f"regional-fallback-{i}"
+        logger.info(f"AIS snapshot started ({label}, {AIS_SNAPSHOT_SECONDS}s)")
+        snapshot = await _ais_snapshot(bboxes)
+        if snapshot:
+            logger.info(f"AIS snapshot got {len(snapshot)} vessels via {label}")
+            break
+        logger.info(f"AIS snapshot: 0 vessels via {label}, trying next")
 
     if snapshot:
         _vessels.update(snapshot)
