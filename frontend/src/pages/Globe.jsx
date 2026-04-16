@@ -278,15 +278,21 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 // Instrument matches (USOIL, BRENT, GOLD, etc.) have global reach — those truly move global markets.
 const INDUSTRY_ONLY_RADIUS_KM = 3500
 
-function ArcsLayer({ articles, infrastructure, influenceMin, onSelect }) {
+// ArcsLayer: draws only from the clicked news dot's location.
+// Two arc types per article:
+//   1. fromCoords → matching infrastructure (instrument/industry based, geo-filtered)
+//   2. fromCoords → other locations mentioned in the article (geo-connection lines)
+function ArcsLayer({ articles, fromCoords, fromName, infrastructure, influenceMin, onSelect }) {
   const arcs = useMemo(() => {
+    if (!fromCoords || !articles.length) return []
     const eligibleInfra = infrastructure.filter(f => f.influence >= influenceMin)
-    const result = []
+    const infraArcs = []
+    const geoArcs = []
+    const seenGeo = new Set()
 
-    for (const article of articles.slice(0, 100)) {
+    for (const article of articles) {
       if (!article.locations_affected?.length) continue
 
-      // Separate instrument-driven matches (global reach) from industry-only matches (geo-constrained)
       const instrumentMatchTypes = new Set()
       const instrumentMatchedBy = []
       for (const inst of (article.instruments_affected || [])) {
@@ -294,40 +300,31 @@ function ArcsLayer({ articles, infrastructure, influenceMin, onSelect }) {
         const types = INSTRUMENT_TO_TYPES[key] || []
         if (types.length) { types.forEach(t => instrumentMatchTypes.add(t)); instrumentMatchedBy.push(inst) }
       }
-
       const industryMatchTypes = new Set()
       const industryMatchedBy = []
       for (const ind of (article.industries_affected || [])) {
         const types = INDUSTRY_TO_TYPES[ind.toLowerCase()] || []
         if (types.length) { types.forEach(t => industryMatchTypes.add(t)); industryMatchedBy.push(ind) }
       }
-
-      if (!instrumentMatchTypes.size && !industryMatchTypes.size) continue
-
       const allMatchedBy = [...instrumentMatchedBy, ...industryMatchedBy]
       const color = article.direction === 'bullish' ? _gc.bullish
         : article.direction === 'bearish' ? _gc.bearish
         : _gc.neutral
       const weight = 0.5 + (article.conviction || 5) * 0.08
-      const opacity = 0.2 + (article.conviction || 5) * 0.03
+      const opacity = 0.3 + (article.conviction || 5) * 0.04
 
-      for (const loc of article.locations_affected) {
-        const coords = getLocationCoords(loc.name, loc.lat, loc.lng)
-        if (!coords) continue
-
+      // Type 1: fromCoords → matching infrastructure
+      if (instrumentMatchTypes.size || industryMatchTypes.size) {
         const matchingInfra = eligibleInfra
           .filter(f => {
             const byInstrument = instrumentMatchTypes.has(f.feature_type)
             const byIndustry = industryMatchTypes.has(f.feature_type)
             if (!byInstrument && !byIndustry) return false
-            // Instrument match → global reach (USOIL/BRENT/GOLD affect markets worldwide)
             if (byInstrument) return true
-            // Industry-only match → must be within regional radius
-            const dist = haversineKm(coords[0], coords[1], f.lat, f.lng)
-            return dist < INDUSTRY_ONLY_RADIUS_KM
+            return haversineKm(fromCoords[0], fromCoords[1], f.lat, f.lng) < INDUSTRY_ONLY_RADIUS_KM
           })
           .sort((a, b) => b.influence - a.influence)
-          .slice(0, 4)
+          .slice(0, 5)
 
         for (const infra of matchingInfra) {
           const linkTypes = allMatchedBy
@@ -337,82 +334,96 @@ function ArcsLayer({ articles, infrastructure, influenceMin, onSelect }) {
               return types.includes(infra.feature_type)
             })
             .slice(0, 3)
-
-          const path = bezierArcPath(coords, [infra.lat, infra.lng])
-          result.push({
-            path, color, weight, opacity,
-            key: `${article.id}-${infra.id}-${loc.name}`,
-            article,
-            infraName: infra.name,
-            infraType: infra.feature_type,
-            fromLoc: loc.name,
-            linkTypes,
+          infraArcs.push({
+            path: bezierArcPath(fromCoords, [infra.lat, infra.lng]),
+            color, weight, opacity,
+            key: `infra-${article.id}-${infra.id}`,
+            kind: 'infra',
+            article, infraName: infra.name, infraType: infra.feature_type,
+            fromLoc: fromName, linkTypes,
           })
         }
       }
 
-      if (result.length >= 200) break
+      // Type 2: fromCoords → other mentioned locations (geo-connection lines)
+      for (const loc of article.locations_affected) {
+        const locCoords = getLocationCoords(loc.name, loc.lat, loc.lng)
+        if (!locCoords) continue
+        // Skip if it's essentially the same spot as the clicked dot
+        if (haversineKm(fromCoords[0], fromCoords[1], locCoords[0], locCoords[1]) < 200) continue
+        const geoKey = `${locCoords[0].toFixed(1)},${locCoords[1].toFixed(1)}`
+        if (seenGeo.has(geoKey)) continue
+        seenGeo.add(geoKey)
+        geoArcs.push({
+          path: bezierArcPath(fromCoords, locCoords),
+          color: '#445566',
+          weight: 1,
+          opacity: 0.5,
+          key: `geo-${article.id}-${loc.name}`,
+          kind: 'geo',
+          article,
+          toLocName: loc.name,
+          fromLoc: fromName,
+          linkTypes: [],
+        })
+      }
     }
 
-    return result
-  }, [articles, infrastructure, influenceMin])
+    return [...geoArcs, ...infraArcs] // geo behind, infra on top
+  }, [articles, fromCoords, fromName, infrastructure, influenceMin])
 
   return arcs.map(arc => {
+    if (arc.kind === 'geo') {
+      return (
+        <React.Fragment key={arc.key}>
+          <Polyline
+            positions={arc.path}
+            pathOptions={{ color: arc.color, weight: arc.weight, opacity: arc.opacity, dashArray: '3 6', interactive: false }}
+          />
+          <Polyline
+            positions={arc.path}
+            pathOptions={{ color: arc.color, weight: 14, opacity: 0 }}
+          >
+            <Tooltip sticky direction="top" offset={[0, -4]} className="arc-tooltip" pane="tooltipPane">
+              <div style={{ fontFamily: 'monospace', fontSize: 10, background: '#0a0a0f', border: '1px solid #1e1e2e', padding: '4px 8px', borderRadius: 3, color: '#7788aa' }}>
+                {arc.fromLoc} → {arc.toLocName}
+                <div style={{ color: '#445566', marginTop: 2 }}>location mentioned in article</div>
+              </div>
+            </Tooltip>
+          </Polyline>
+        </React.Fragment>
+      )
+    }
+
     const dirLabel = arc.article.direction?.toUpperCase() || 'NEUTRAL'
     const conv = arc.article.conviction || '?'
-    const ttTitle = arc.article.title?.length > 60
-      ? arc.article.title.slice(0, 60) + '…'
-      : arc.article.title
+    const ttTitle = arc.article.title?.length > 60 ? arc.article.title.slice(0, 60) + '…' : arc.article.title
     const via = arc.linkTypes.length ? arc.linkTypes.join(', ') : arc.infraType?.replace(/_/g, ' ')
-
-    const tooltip = (
-      <Tooltip sticky direction="top" offset={[0, -4]} className="arc-tooltip" pane="tooltipPane">
-        <div style={{
-          fontFamily: "'JetBrains Mono','Fira Code','Courier New',monospace",
-          fontSize: 10, lineHeight: 1.5, maxWidth: 240,
-          background: '#0a0a0f', border: '1px solid #1e1e2e',
-          padding: '5px 8px', borderRadius: 3, color: '#e8e8f0',
-        }}>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
-            <span style={{ color: arc.color, fontWeight: 700 }}>{dirLabel}</span>
-            <span style={{ color: '#666677' }}>C{conv}</span>
-            <span style={{ color: '#444455', marginLeft: 'auto' }}>{arc.fromLoc} → {arc.infraName}</span>
-          </div>
-          <div style={{ color: '#aaaacc' }}>{ttTitle}</div>
-          {via && <div style={{ color: '#555566', marginTop: 2 }}>via {via}</div>}
-        </div>
-      </Tooltip>
-    )
-
-    const handlers = {
-      click: () => onSelect({ type: 'arc', article: arc.article, infraName: arc.infraName, fromLoc: arc.fromLoc, linkTypes: arc.linkTypes }),
-    }
 
     return (
       <React.Fragment key={arc.key}>
-        {/* Visible thin arc */}
         <Polyline
           positions={arc.path}
-          pathOptions={{
-            color: arc.color,
-            weight: arc.weight,
-            opacity: arc.opacity,
-            dashArray: '5 8',
-            interactive: false,
-          }}
+          pathOptions={{ color: arc.color, weight: arc.weight, opacity: arc.opacity, dashArray: '5 8', interactive: false }}
         />
-        {/* Wide invisible hit area — easy to hover */}
         <Polyline
           positions={arc.path}
-          pathOptions={{
-            color: arc.color,
-            weight: 14,
-            opacity: 0,
-            dashArray: null,
+          pathOptions={{ color: arc.color, weight: 14, opacity: 0 }}
+          eventHandlers={{
+            click: () => onSelect({ type: 'arc', article: arc.article, infraName: arc.infraName, fromLoc: arc.fromLoc, linkTypes: arc.linkTypes }),
           }}
-          eventHandlers={handlers}
         >
-          {tooltip}
+          <Tooltip sticky direction="top" offset={[0, -4]} className="arc-tooltip" pane="tooltipPane">
+            <div style={{ fontFamily: "'JetBrains Mono','Fira Code','Courier New',monospace", fontSize: 10, lineHeight: 1.5, maxWidth: 240, background: '#0a0a0f', border: '1px solid #1e1e2e', padding: '5px 8px', borderRadius: 3, color: '#e8e8f0' }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
+                <span style={{ color: arc.color, fontWeight: 700 }}>{dirLabel}</span>
+                <span style={{ color: '#666677' }}>C{conv}</span>
+                <span style={{ color: '#444455', marginLeft: 'auto' }}>{arc.fromLoc} → {arc.infraName}</span>
+              </div>
+              <div style={{ color: '#aaaacc' }}>{ttTitle}</div>
+              {via && <div style={{ color: '#555566', marginTop: 2 }}>via {via}</div>}
+            </div>
+          </Tooltip>
         </Polyline>
       </React.Fragment>
     )
@@ -465,7 +476,7 @@ function NewsLayer({ articles, onSelect }) {
         position={dot.coords}
         icon={icon}
         eventHandlers={{
-          click: () => onSelect({ type: 'news', location: dot.locName, articles: dot.articles }),
+          click: () => onSelect({ type: 'news', location: dot.locName, coords: dot.coords, articles: dot.articles }),
         }}
       />
     )
@@ -1139,9 +1150,11 @@ export default function Globe() {
             onSelect={setSelected}
           />
 
-          {layers.arcs && (
+          {layers.arcs && selected?.type === 'news' && (
             <ArcsLayer
-              articles={selected?.type === 'news' ? selected.articles : []}
+              articles={selected.articles}
+              fromCoords={selected.coords}
+              fromName={selected.location}
               infrastructure={infrastructure}
               onSelect={setSelected}
               influenceMin={influenceMin}
