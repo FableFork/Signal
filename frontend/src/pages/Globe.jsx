@@ -1141,7 +1141,7 @@ export default function Globe() {
 
           {layers.arcs && (
             <ArcsLayer
-              articles={filteredArticles}
+              articles={selected?.type === 'news' ? selected.articles : []}
               infrastructure={infrastructure}
               onSelect={setSelected}
               influenceMin={influenceMin}
