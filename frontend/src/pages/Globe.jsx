@@ -197,7 +197,42 @@ function RoutesLayer({ articles, hoursWindow, onSelect }) {
   })
 }
 
-function InfraLayer({ infrastructure, influenceMin, layers, onSelect }) {
+function getMatchingArticles(feature, articles) {
+  const result = []
+  for (const article of articles) {
+    const locs = article.locations_affected || []
+    let byInstrument = false
+    let byIndustry = false
+    let matchedBy = []
+
+    for (const inst of (article.instruments_affected || [])) {
+      const key = inst.toUpperCase().replace(/[^A-Z]/g, '')
+      const types = INSTRUMENT_TO_TYPES[key] || []
+      if (types.includes(feature.feature_type)) { byInstrument = true; matchedBy.push(inst) }
+    }
+    for (const ind of (article.industries_affected || [])) {
+      const types = INDUSTRY_TO_TYPES[ind.toLowerCase()] || []
+      if (types.includes(feature.feature_type)) { byIndustry = true; matchedBy.push(ind) }
+    }
+
+    if (!byInstrument && !byIndustry) continue
+
+    if (byInstrument) {
+      result.push({ article, matchedBy })
+      continue
+    }
+    // Industry-only: require at least one location within radius
+    const nearby = locs.some(loc => {
+      const coords = getLocationCoords(loc.name, loc.lat, loc.lng)
+      if (!coords) return false
+      return haversineKm(coords[0], coords[1], feature.lat, feature.lng) < INDUSTRY_ONLY_RADIUS_KM
+    })
+    if (nearby) result.push({ article, matchedBy })
+  }
+  return result
+}
+
+function InfraLayer({ infrastructure, influenceMin, layers, articles, onSelect }) {
   const filtered = useMemo(
     () => infrastructure.filter(f => f.influence >= influenceMin),
     [infrastructure, influenceMin]
@@ -220,12 +255,26 @@ function InfraLayer({ infrastructure, influenceMin, layers, onSelect }) {
         radius={r}
         pathOptions={{ color, fillColor: color, fillOpacity: 0.6, weight: 1, opacity: 0.9 }}
         eventHandlers={{
-          click: () => onSelect({ type: 'infra', feature: f }),
+          click: () => onSelect({ type: 'infra', feature: f, matchingArticles: getMatchingArticles(f, articles) }),
         }}
       />
     )
   })
 }
+
+// Great-circle distance in km between two lat/lng points
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+// Industry-only matches (no specific traded instrument) are constrained to infra within this radius.
+// Instrument matches (USOIL, BRENT, GOLD, etc.) have global reach — those truly move global markets.
+const INDUSTRY_ONLY_RADIUS_KM = 3500
 
 function ArcsLayer({ articles, infrastructure, influenceMin, onSelect }) {
   const arcs = useMemo(() => {
@@ -235,30 +284,28 @@ function ArcsLayer({ articles, infrastructure, influenceMin, onSelect }) {
     for (const article of articles.slice(0, 100)) {
       if (!article.locations_affected?.length) continue
 
-      const matchTypes = new Set()
-      const matchedBy = [] // which instruments/industries triggered the match
+      // Separate instrument-driven matches (global reach) from industry-only matches (geo-constrained)
+      const instrumentMatchTypes = new Set()
+      const instrumentMatchedBy = []
       for (const inst of (article.instruments_affected || [])) {
         const key = inst.toUpperCase().replace(/[^A-Z]/g, '')
         const types = INSTRUMENT_TO_TYPES[key] || []
-        if (types.length) { types.forEach(t => matchTypes.add(t)); matchedBy.push(inst) }
+        if (types.length) { types.forEach(t => instrumentMatchTypes.add(t)); instrumentMatchedBy.push(inst) }
       }
+
+      const industryMatchTypes = new Set()
+      const industryMatchedBy = []
       for (const ind of (article.industries_affected || [])) {
         const types = INDUSTRY_TO_TYPES[ind.toLowerCase()] || []
-        if (types.length) { types.forEach(t => matchTypes.add(t)); matchedBy.push(ind) }
+        if (types.length) { types.forEach(t => industryMatchTypes.add(t)); industryMatchedBy.push(ind) }
       }
-      if (!matchTypes.size) continue
 
-      const matchingInfra = eligibleInfra
-        .filter(f => matchTypes.has(f.feature_type))
-        .sort((a, b) => b.influence - a.influence)
-        .slice(0, 4)
+      if (!instrumentMatchTypes.size && !industryMatchTypes.size) continue
 
-      if (!matchingInfra.length) continue
-
+      const allMatchedBy = [...instrumentMatchedBy, ...industryMatchedBy]
       const color = article.direction === 'bullish' ? _gc.bullish
         : article.direction === 'bearish' ? _gc.bearish
         : _gc.neutral
-
       const weight = 0.5 + (article.conviction || 5) * 0.08
       const opacity = 0.2 + (article.conviction || 5) * 0.03
 
@@ -266,9 +313,22 @@ function ArcsLayer({ articles, infrastructure, influenceMin, onSelect }) {
         const coords = getLocationCoords(loc.name, loc.lat, loc.lng)
         if (!coords) continue
 
+        const matchingInfra = eligibleInfra
+          .filter(f => {
+            const byInstrument = instrumentMatchTypes.has(f.feature_type)
+            const byIndustry = industryMatchTypes.has(f.feature_type)
+            if (!byInstrument && !byIndustry) return false
+            // Instrument match → global reach (USOIL/BRENT/GOLD affect markets worldwide)
+            if (byInstrument) return true
+            // Industry-only match → must be within regional radius
+            const dist = haversineKm(coords[0], coords[1], f.lat, f.lng)
+            return dist < INDUSTRY_ONLY_RADIUS_KM
+          })
+          .sort((a, b) => b.influence - a.influence)
+          .slice(0, 4)
+
         for (const infra of matchingInfra) {
-          // Which types specifically link this article to this infra
-          const linkTypes = matchedBy
+          const linkTypes = allMatchedBy
             .filter(m => {
               const key = m.toUpperCase().replace(/[^A-Z]/g, '')
               const types = INSTRUMENT_TO_TYPES[key] || INDUSTRY_TO_TYPES[m.toLowerCase()] || []
@@ -303,43 +363,56 @@ function ArcsLayer({ articles, infrastructure, influenceMin, onSelect }) {
       : arc.article.title
     const via = arc.linkTypes.length ? arc.linkTypes.join(', ') : arc.infraType?.replace(/_/g, ' ')
 
-    return (
-      <Polyline
-        key={arc.key}
-        positions={arc.path}
-        pathOptions={{
-          color: arc.color,
-          weight: arc.weight,
-          opacity: arc.opacity,
-          dashArray: '5 8',
-        }}
-        eventHandlers={{
-          click: () => onSelect({ type: 'arc', article: arc.article, infraName: arc.infraName, fromLoc: arc.fromLoc, linkTypes: arc.linkTypes }),
-          mouseover: (e) => e.target.setStyle({ weight: arc.weight + 2, opacity: 0.9 }),
-          mouseout: (e) => e.target.setStyle({ weight: arc.weight, opacity: arc.opacity }),
-        }}
-      >
-        <Tooltip sticky direction="top" offset={[0, -4]}
-          className="arc-tooltip"
-          pane="tooltipPane"
-        >
-          <div style={{
-            fontFamily: "'JetBrains Mono','Fira Code','Courier New',monospace",
-            fontSize: 10, lineHeight: 1.5, maxWidth: 240,
-            background: '#0a0a0f', border: '1px solid #1e1e2e',
-            padding: '5px 8px', borderRadius: 3,
-            color: '#e8e8f0',
-          }}>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
-              <span style={{ color: arc.color, fontWeight: 700 }}>{dirLabel}</span>
-              <span style={{ color: '#666677' }}>C{conv}</span>
-              <span style={{ color: '#444455', marginLeft: 'auto' }}>{arc.fromLoc} → {arc.infraName}</span>
-            </div>
-            <div style={{ color: '#aaaacc' }}>{ttTitle}</div>
-            {via && <div style={{ color: '#555566', marginTop: 2 }}>via {via}</div>}
+    const tooltip = (
+      <Tooltip sticky direction="top" offset={[0, -4]} className="arc-tooltip" pane="tooltipPane">
+        <div style={{
+          fontFamily: "'JetBrains Mono','Fira Code','Courier New',monospace",
+          fontSize: 10, lineHeight: 1.5, maxWidth: 240,
+          background: '#0a0a0f', border: '1px solid #1e1e2e',
+          padding: '5px 8px', borderRadius: 3, color: '#e8e8f0',
+        }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
+            <span style={{ color: arc.color, fontWeight: 700 }}>{dirLabel}</span>
+            <span style={{ color: '#666677' }}>C{conv}</span>
+            <span style={{ color: '#444455', marginLeft: 'auto' }}>{arc.fromLoc} → {arc.infraName}</span>
           </div>
-        </Tooltip>
-      </Polyline>
+          <div style={{ color: '#aaaacc' }}>{ttTitle}</div>
+          {via && <div style={{ color: '#555566', marginTop: 2 }}>via {via}</div>}
+        </div>
+      </Tooltip>
+    )
+
+    const handlers = {
+      click: () => onSelect({ type: 'arc', article: arc.article, infraName: arc.infraName, fromLoc: arc.fromLoc, linkTypes: arc.linkTypes }),
+    }
+
+    return (
+      <React.Fragment key={arc.key}>
+        {/* Visible thin arc */}
+        <Polyline
+          positions={arc.path}
+          pathOptions={{
+            color: arc.color,
+            weight: arc.weight,
+            opacity: arc.opacity,
+            dashArray: '5 8',
+            interactive: false,
+          }}
+        />
+        {/* Wide invisible hit area — easy to hover */}
+        <Polyline
+          positions={arc.path}
+          pathOptions={{
+            color: arc.color,
+            weight: 14,
+            opacity: 0,
+            dashArray: null,
+          }}
+          eventHandlers={handlers}
+        >
+          {tooltip}
+        </Polyline>
+      </React.Fragment>
     )
   })
 }
@@ -793,13 +866,25 @@ function RoutePanel({ selected, S }) {
 
 function InfraPanel({ selected, S }) {
   const f = selected.feature
+  const matches = selected.matchingArticles || []
   const color = infraColor(f.feature_type)
   const typeLabel = f.feature_type?.replace(/_/g, ' ').toUpperCase() || 'FACILITY'
+
+  const bullish = matches.filter(m => m.article.direction === 'bullish').length
+  const bearish = matches.filter(m => m.article.direction === 'bearish').length
+  const avgConv = matches.length
+    ? Math.round(matches.reduce((s, m) => s + (m.article.conviction || 5), 0) / matches.length * 10) / 10
+    : null
 
   return (
     <>
       <div style={{ marginBottom: 12 }}>
         <span style={S.tag(color)}>{typeLabel}</span>
+        {matches.length > 0 && (
+          <span style={{ ...S.tag(bullish >= bearish ? _gc.bullish : _gc.bearish), marginLeft: 6 }}>
+            {matches.length} SIGNAL{matches.length !== 1 ? 'S' : ''}
+          </span>
+        )}
       </div>
 
       <div style={S.section}>
@@ -812,6 +897,43 @@ function InfraPanel({ selected, S }) {
           <span style={{ color, fontWeight: 700 }}>{f.influence}/10</span>
         </div>
       </div>
+
+      {matches.length > 0 ? (
+        <div style={S.section}>
+          <div style={S.sectionTitle}>WHY THIS SITE</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+            {bullish > 0 && <span style={S.tag(_gc.bullish)}>↑ {bullish} bullish</span>}
+            {bearish > 0 && <span style={S.tag(_gc.bearish)}>↓ {bearish} bearish</span>}
+            {avgConv !== null && <span style={S.tag('#555566')}>avg C{avgConv}</span>}
+          </div>
+          {matches.slice(0, 8).map(({ article: a, matchedBy }, i) => {
+            const dirColor = a.direction === 'bullish' ? _gc.bullish
+              : a.direction === 'bearish' ? _gc.bearish : _gc.neutral
+            const hrsAgo = Math.round((Date.now() - new Date(a.published_at).getTime()) / 3600000)
+            return (
+              <div key={i} style={{ ...S.articleRow, borderLeft: `2px solid ${dirColor}`, paddingLeft: 8 }}>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 3, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={S.tag(dirColor)}>{(a.direction || 'neutral').toUpperCase()}</span>
+                  {a.conviction && <span style={S.tag('#555566')}>C{a.conviction}</span>}
+                  {matchedBy.slice(0, 3).map(m => (
+                    <span key={m} style={{ ...S.tag('#334455'), color: '#88aacc' }}>{m}</span>
+                  ))}
+                  <span style={{ color: '#333344', fontSize: 9, marginLeft: 'auto' }}>{hrsAgo}h ago</span>
+                </div>
+                <div style={{ color: '#ccccdd', fontSize: 11, lineHeight: 1.4 }}>{a.title}</div>
+                {a.reasoning && (
+                  <div style={{ color: '#444455', fontSize: 10, lineHeight: 1.4, marginTop: 3 }}>{a.reasoning}</div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div style={S.section}>
+          <div style={S.sectionTitle}>WHY THIS SITE</div>
+          <div style={{ color: '#333344', fontSize: 11 }}>No recent articles targeting this site.</div>
+        </div>
+      )}
 
       <div style={S.section}>
         <div style={S.sectionTitle}>COORDINATES</div>
@@ -1011,6 +1133,7 @@ export default function Globe() {
             infrastructure={infrastructure}
             influenceMin={influenceMin}
             layers={layers}
+            articles={filteredArticles}
             onSelect={setSelected}
           />
 

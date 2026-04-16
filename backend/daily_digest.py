@@ -28,7 +28,7 @@ async def generate_digest(date_str: str = None, user_id: int = 1) -> dict:
         return {"error": "No API key configured"}
 
     model = await get_user_setting(user_id, "claude_model") or "claude-sonnet-4-20250514"
-    max_tokens = 4096
+    max_tokens = 8192
     system_prompt = await get_user_setting(user_id, "digest_system_prompt") or ""
 
     # Gather recent headlines from this user's sources
