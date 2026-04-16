@@ -55,7 +55,9 @@ const INSTRUMENT_TO_TYPES = {
 }
 
 const INDUSTRY_TO_TYPES = {
-  energy: ['oil_field', 'refinery', 'gas_plant', 'lng_terminal', 'nuclear', 'energy_facility'],
+  // 'energy' is intentionally generic — only matches the catch-all type.
+  // Specific sub-industries (oil, gas, nuclear) match their own infra types.
+  energy: ['energy_facility'],
   oil: ['oil_field', 'refinery'],
   gas: ['gas_plant', 'lng_terminal'],
   nuclear: ['nuclear'],
@@ -309,7 +311,7 @@ function ArcsLayer({ articles, infrastructure, influenceMin, onSelect }) {
       const weight = 0.5 + (article.conviction || 5) * 0.08
       const opacity = 0.2 + (article.conviction || 5) * 0.03
 
-      for (const loc of article.locations_affected.slice(0, 2)) {
+      for (const loc of article.locations_affected) {
         const coords = getLocationCoords(loc.name, loc.lat, loc.lng)
         if (!coords) continue
 
@@ -424,7 +426,7 @@ function NewsLayer({ articles, onSelect }) {
 
     for (const article of articles) {
       if (!article.locations_affected?.length) continue
-      for (const loc of article.locations_affected.slice(0, 2)) {
+      for (const loc of article.locations_affected) {
         const coords = getLocationCoords(loc.name, loc.lat, loc.lng)
         if (!coords) continue
 
