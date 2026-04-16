@@ -68,6 +68,9 @@ export const api = {
     return req(`/globe/infrastructure?${qs}`)
   },
   refreshInfrastructure: () => req('/globe/infrastructure/refresh', { method: 'POST' }),
+  getFlights: () => req('/globe/flights'),
+  getVessels: () => req('/globe/vessels'),
+  startTracking: () => req('/globe/tracking/start', { method: 'POST' }),
 
   // Data
   purgeData: () => req('/data/purge', { method: 'POST' }),

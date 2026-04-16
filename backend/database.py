@@ -115,6 +115,7 @@ CREATE INDEX IF NOT EXISTS idx_infra_influence ON infrastructure_features(influe
 # Defaults applied to each new user
 USER_SETTING_DEFAULTS = {
     "anthropic_api_key": "",
+    "aisstream_api_key": "",
     "claude_model": "claude-sonnet-4-6",
     "max_tokens": "1024",
     "auto_analyze": "true",
@@ -149,6 +150,12 @@ USER_SETTING_DEFAULTS = {
     "color_globe_route_elevated": "#ff6b00",
     "color_globe_route_high_risk": "#ff3b3b",
     "color_globe_arc_geo": "#445566",
+    "color_globe_vessel": "#00aaff",
+    "color_globe_flight": "#ffcc00",
+    "color_globe_zone_conflict": "#ff3b3b",
+    "color_globe_zone_risk": "#ff6b00",
+    "color_globe_zone_restricted": "#aa44ff",
+    "color_globe_zone_sanctioned": "#ff44aa",
     "article_system_prompt": """You are SIGNAL, a trading intelligence system. Analyze the provided news article and determine its market implications.
 Trace causality chains from the news event to affected instruments and industries. Examples:
 Iran/Hormuz/Middle East → Oil, Gold, Energy stocks, Shipping

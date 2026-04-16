@@ -7,7 +7,7 @@ from database import (
 )
 from scheduler import reload_digest_schedule, reload_fetch_schedule
 
-SENSITIVE_KEYS = {"anthropic_api_key"}
+SENSITIVE_KEYS = {"anthropic_api_key", "aisstream_api_key"}
 SCHEDULE_KEYS = {
     "digest_morning_time", "digest_afternoon_time",
     "digest_morning_enabled", "digest_afternoon_enabled", "timezone"

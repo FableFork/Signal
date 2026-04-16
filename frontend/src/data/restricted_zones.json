@@ -1,0 +1,275 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "red_sea_houthi",
+        "name": "Red Sea — Houthi Attack Zone",
+        "zone_type": "maritime_conflict",
+        "detail": "Active Houthi missile and drone attacks on commercial shipping since late 2023. Vessels are advised to avoid the Red Sea and use Cape of Good Hope alternative. Risk applies to all merchant vessels regardless of flag.",
+        "risk_level": "high",
+        "active_since": "2023-11"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[32.0,12.5],[43.5,12.5],[43.5,22.0],[32.0,22.0],[32.0,12.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bab_el_mandeb",
+        "name": "Bab-el-Mandeb Strait",
+        "zone_type": "maritime_conflict",
+        "detail": "High threat from Houthi forces operating from Yemen. Critical chokepoint for Europe-Asia trade. ~12% of global trade volume normally passes here. Most major shipping lines have suspended Red Sea transit.",
+        "risk_level": "high",
+        "active_since": "2023-11"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[42.0,11.5],[44.0,11.5],[44.0,13.5],[42.0,13.5],[42.0,11.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "gulf_of_aden",
+        "name": "Gulf of Aden — High Risk Area",
+        "zone_type": "maritime_risk",
+        "detail": "Historically high piracy risk from Somali pirates. Current elevated threat from Houthi drone and missile attacks on vessels. IMO-designated High Risk Area.",
+        "risk_level": "elevated",
+        "active_since": "2008-01"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[42.0,10.0],[52.0,10.0],[52.0,16.0],[42.0,16.0],[42.0,10.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "persian_gulf_hormuz",
+        "name": "Persian Gulf — Iran Threat Zone",
+        "zone_type": "maritime_conflict",
+        "detail": "Iran IRGC has seized, harassed and attacked commercial vessels. Risk to tankers is elevated during US-Iran tensions. Strait of Hormuz handles ~21M bbl/day of oil.",
+        "risk_level": "elevated",
+        "active_since": "2019-05"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[47.0,22.0],[62.0,22.0],[62.0,30.0],[47.0,30.0],[47.0,22.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "black_sea_conflict",
+        "name": "Black Sea — War Zone",
+        "zone_type": "maritime_conflict",
+        "detail": "Active war zone following Russia's invasion of Ukraine. Mine threat throughout. Russia has targeted grain export infrastructure. Ukrainian grain corridor suspended multiple times. Major insurers have excluded this zone.",
+        "risk_level": "high",
+        "active_since": "2022-02"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[28.0,42.5],[41.0,42.5],[41.0,47.0],[28.0,47.0],[28.0,42.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "gulf_of_guinea",
+        "name": "Gulf of Guinea — Piracy Zone",
+        "zone_type": "maritime_risk",
+        "detail": "Highest global rate of maritime piracy and armed robbery against ships. Nigerian and West African criminal gangs operate up to 200nm offshore. Kidnapping for ransom is the primary threat. IMO High Risk Area.",
+        "risk_level": "elevated",
+        "active_since": "2010-01"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-5.0,-2.0],[10.0,-2.0],[10.0,6.0],[-5.0,6.0],[-5.0,-2.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "strait_of_malacca_risk",
+        "name": "Strait of Malacca — Piracy Risk",
+        "zone_type": "maritime_risk",
+        "detail": "Periodic piracy and armed robbery incidents. ~90,000 vessels transit annually. One of the world's busiest chokepoints — ~40% of global trade. ReCAAP Information Sharing Centre monitors the area.",
+        "risk_level": "low",
+        "active_since": "2000-01"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[98.0,1.0],[104.5,1.0],[104.5,6.5],[98.0,6.5],[98.0,1.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ukraine_airspace",
+        "name": "Ukraine — Closed Airspace",
+        "zone_type": "airspace_closed",
+        "detail": "Ukrainian airspace closed to commercial aviation since Russia's full-scale invasion Feb 24 2022. Active air defense and missile/drone activity throughout. ICAO issued blanket advisory. All commercial carriers avoid.",
+        "risk_level": "high",
+        "active_since": "2022-02"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[22.0,44.0],[40.5,44.0],[40.5,52.5],[22.0,52.5],[22.0,44.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "russia_restricted",
+        "name": "Russia — Restricted for Western Carriers",
+        "zone_type": "airspace_restricted",
+        "detail": "EU, UK, US, Canadian and most Western carriers banned from Russian airspace in response to Ukraine invasion. Russia closed airspace to 36+ countries in retaliation. Asian and Middle Eastern carriers still using Russian overflights.",
+        "risk_level": "elevated",
+        "active_since": "2022-02"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[27.0,42.0],[180.0,42.0],[180.0,72.0],[27.0,72.0],[27.0,42.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "belarus_airspace",
+        "name": "Belarus — EU/UK Carrier Ban",
+        "zone_type": "airspace_restricted",
+        "detail": "EU and UK carriers banned from Belarusian airspace following the forced diversion of Ryanair FR4978 in May 2021 (Minsk incident). Belarus is also using airspace closure as economic pressure related to Ukraine conflict.",
+        "risk_level": "elevated",
+        "active_since": "2021-05"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[23.0,51.0],[32.5,51.0],[32.5,56.5],[23.0,56.5],[23.0,51.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "north_korea_closed",
+        "name": "North Korea — Closed Airspace & Waters",
+        "zone_type": "airspace_closed",
+        "detail": "North Korea closed to all international commercial aviation and maritime traffic. ICAO advisory in place. Periodic ballistic missile launches create NOTAM hazards across the region. Sanctions prohibit virtually all trade.",
+        "risk_level": "high",
+        "active_since": "1950-01"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[124.0,37.5],[130.5,37.5],[130.5,43.0],[124.0,43.0],[124.0,37.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "iran_sanctions",
+        "name": "Iran — Sanctioned",
+        "zone_type": "sanctioned",
+        "detail": "Under US OFAC, EU, and UN sanctions. Oil exports, banking, shipping, and arms trade restricted. IRGC designated as terrorist organization by US. Carriers operating Iranian-flagged vessels or calling Iranian ports face secondary sanctions risk.",
+        "risk_level": "high",
+        "active_since": "2012-01"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[44.0,25.0],[63.5,25.0],[63.5,40.0],[44.0,40.0],[44.0,25.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "russia_sanctions",
+        "name": "Russia — Sanctioned",
+        "zone_type": "sanctioned",
+        "detail": "Comprehensive US, EU, UK sanctions package since Feb 2022. Includes energy sector, financial system (SWIFT disconnection), arms, luxury goods. G7 oil price cap ($60/bbl) on Russian crude. Many global companies have exited.",
+        "risk_level": "elevated",
+        "active_since": "2022-02"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[27.0,42.0],[180.0,42.0],[180.0,78.0],[27.0,78.0],[27.0,42.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "syria_sanctions",
+        "name": "Syria — Sanctioned",
+        "zone_type": "sanctioned",
+        "detail": "Heavy US (Caesar Act), EU, and multilateral sanctions since Syrian civil war. Oil sector, government entities, and designated individuals sanctioned. Virtually no Western commercial activity.",
+        "risk_level": "high",
+        "active_since": "2011-05"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[35.5,32.0],[42.5,32.0],[42.5,37.5],[35.5,37.5],[35.5,32.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "yemen_conflict",
+        "name": "Yemen — Active Conflict",
+        "zone_type": "airspace_closed",
+        "detail": "Ongoing civil war. Sana'a airport controlled by Houthi forces (Ansar Allah). Aden under internationally recognised government. Active airstrikes by Saudi-led coalition. Aviation and shipping extremely high risk.",
+        "risk_level": "high",
+        "active_since": "2015-03"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[42.5,12.0],[54.5,12.0],[54.5,19.0],[42.5,19.0],[42.5,12.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "libya_conflict",
+        "name": "Libya — Conflict Zone",
+        "zone_type": "airspace_closed",
+        "detail": "Divided country with contested airspace. Western government (Tripoli) vs eastern GNA. Armed group activity across country. ICAO advises extreme caution. Sporadic fighting continues. Oil infrastructure periodically attacked.",
+        "risk_level": "elevated",
+        "active_since": "2011-02"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[9.5,19.5],[25.0,19.5],[25.0,33.5],[9.5,33.5],[9.5,19.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "sudan_conflict",
+        "name": "Sudan — Active Conflict",
+        "zone_type": "airspace_closed",
+        "detail": "Civil war between Sudanese Armed Forces and Rapid Support Forces (RSF) since April 2023. Khartoum airport non-operational. Major humanitarian crisis. Foreign nationals evacuated. Airspace extremely dangerous.",
+        "risk_level": "high",
+        "active_since": "2023-04"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[22.0,8.5],[38.5,8.5],[38.5,22.5],[22.0,22.5],[22.0,8.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "myanmar_sanctions",
+        "name": "Myanmar — Sanctioned",
+        "zone_type": "sanctioned",
+        "detail": "US, EU, UK and others imposed sanctions following February 2021 military coup. Targeted sanctions on military entities, junta leadership, and key revenue sources (jade, gems, oil/gas). Airspace advisory for armed group activity.",
+        "risk_level": "elevated",
+        "active_since": "2021-02"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[92.0,9.5],[101.0,9.5],[101.0,28.5],[92.0,28.5],[92.0,9.5]]]
+      }
+    }
+  ]
+}

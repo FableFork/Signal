@@ -16,6 +16,7 @@ from database import (
     purge_old_articles,
 )
 from infrastructure_fetcher import run_infrastructure_refresh
+from globe_tracker import refresh_flights, start_ais_stream, get_flights_data, get_vessels_data
 from websocket_manager import ws_manager
 from news_fetcher import run_fetch_cycle, get_article_body_full, _is_blocked
 from ai_analyzer import analyze_article
@@ -25,6 +26,7 @@ from settings_manager import (
     update_user_setting_safe, get_settings_safe,
     get_user_sources, save_user_sources
 )
+from database import get_user_setting
 
 UID = 1  # Single-user mode — all data belongs to user 1
 
@@ -39,6 +41,12 @@ async def lifespan(app: FastAPI):
             count = (await cur.fetchone())[0]
     if count == 0:
         asyncio.create_task(run_infrastructure_refresh())
+    # Start flight tracking (no key needed)
+    asyncio.create_task(refresh_flights())
+    # Start AIS vessel stream if key is configured
+    ais_key = await get_user_setting(UID, "aisstream_api_key")
+    if ais_key:
+        await start_ais_stream(ais_key)
     yield
 
 
@@ -466,6 +474,28 @@ async def refresh_infrastructure(background_tasks: BackgroundTasks):
     """Trigger a fresh Overpass data pull in the background."""
     background_tasks.add_task(run_infrastructure_refresh)
     return {"ok": True, "message": "Infrastructure refresh started in background"}
+
+
+@app.get("/api/globe/flights")
+async def get_flights():
+    """Return cached cargo flight positions from OpenSky Network."""
+    return get_flights_data()
+
+
+@app.get("/api/globe/vessels")
+async def get_vessels():
+    """Return cached vessel positions from AIS stream."""
+    return get_vessels_data()
+
+
+@app.post("/api/globe/tracking/start")
+async def start_tracking():
+    """Re-initialise tracking streams (called after saving AIS key in settings)."""
+    asyncio.create_task(refresh_flights())
+    ais_key = await get_user_setting(UID, "aisstream_api_key")
+    if ais_key:
+        await start_ais_stream(ais_key)
+    return {"ok": True}
 
 
 # ─── Settings ─────────────────────────────────────────────────────────────────

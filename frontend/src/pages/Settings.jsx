@@ -36,10 +36,15 @@ export default function Settings() {
   const save = async () => {
     setSaving(true)
     try {
-      // Strip masked API key — backend already has the real value, sending "***" would overwrite it
+      // Strip masked API keys — backend already has the real values, sending "***" would overwrite them
       const payload = { ...local }
       if (payload.anthropic_api_key === '***') delete payload.anthropic_api_key
+      if (payload.aisstream_api_key === '***') delete payload.aisstream_api_key
       await updateSettings(payload)
+      // Restart tracking streams if AIS key was just saved
+      if (payload.aisstream_api_key && payload.aisstream_api_key !== '***') {
+        api.startTracking().catch(() => {})
+      }
       await api.saveSources(sources)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -97,6 +102,29 @@ export default function Settings() {
             {saving ? 'SAVING...' : saved ? '✓ SAVED' : 'SAVE ALL'}
           </button>
         </div>
+
+        {/* Live Tracking */}
+        <Section title="LIVE TRACKING">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
+            <div>
+              <Label>AISSTREAM.IO API KEY (vessel tracking)</Label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input className="input-sig" type="password"
+                  placeholder={local.aisstream_api_key === '***' ? '● ● ● ● ● ● ● ● (key saved — leave blank to keep)' : 'Free at aisstream.io — register for API key'}
+                  value={local.aisstream_api_key === '***' ? '' : (local.aisstream_api_key || '')}
+                  onChange={(e) => set('aisstream_api_key', e.target.value || '***')}
+                  style={{ flex: 1 }}
+                />
+                {local.aisstream_api_key === '***' && (
+                  <span style={{ color: 'var(--bullish)', fontSize: 10, whiteSpace: 'nowrap' }}>✓ SAVED</span>
+                )}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 4 }}>
+                Tracks tankers, bulk carriers and container ships in Hormuz, Suez, Red Sea, Malacca and other chokepoints. Cargo flights (OpenSky) work without a key.
+              </div>
+            </div>
+          </div>
+        </Section>
 
         {/* AI Settings */}
         <Section title="AI SETTINGS">
@@ -348,6 +376,12 @@ export default function Settings() {
               ['color_globe_route_elevated', 'Route — Elevated'],
               ['color_globe_route_high_risk', 'Route — High Risk'],
               ['color_globe_arc_geo', 'Arc — Geo Connection'],
+              ['color_globe_vessel', 'Vessel Markers'],
+              ['color_globe_flight', 'Flight Markers'],
+              ['color_globe_zone_conflict', 'Zone — Conflict'],
+              ['color_globe_zone_risk', 'Zone — Maritime Risk'],
+              ['color_globe_zone_restricted', 'Zone — Restricted Airspace'],
+              ['color_globe_zone_sanctioned', 'Zone — Sanctioned'],
             ].map(([key, label]) => (
               <ColorPicker key={key} label={label} value={local[key] || '#000000'}
                 onChange={(v) => set(key, v)} />

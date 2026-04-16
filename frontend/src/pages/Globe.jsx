@@ -524,6 +524,97 @@ function CountryHighlightLayer({ worldGeoJSON, articles }) {
   )
 }
 
+// ─── Vessel, Flight, Zone layers ─────────────────────────────────────────────
+
+function zoneColor(zone_type) {
+  if (zone_type === 'maritime_conflict' || zone_type === 'airspace_closed') return _gc.zoneConflict
+  if (zone_type === 'maritime_risk') return _gc.zoneRisk
+  if (zone_type === 'airspace_restricted') return _gc.zoneRestricted
+  if (zone_type === 'sanctioned') return _gc.zoneSanctioned
+  return '#888888'
+}
+
+function ZonesLayer({ zones, onSelect }) {
+  if (!zones?.length) return null
+  return zones.map(f => {
+    const p = f.properties
+    const color = zoneColor(p.zone_type)
+    return (
+      <GeoJSON
+        key={p.id}
+        data={f}
+        style={{
+          color, weight: 1, opacity: 0.6,
+          fillColor: color, fillOpacity: p.risk_level === 'high' ? 0.12 : 0.06,
+          dashArray: '4 4',
+        }}
+        eventHandlers={{
+          click: () => onSelect({ type: 'zone', zone: p }),
+        }}
+      >
+        <Tooltip sticky direction="top" className="arc-tooltip" pane="tooltipPane">
+          <div style={{ fontFamily: 'monospace', fontSize: 10, background: '#0a0a0f', border: `1px solid ${color}`, padding: '4px 8px', borderRadius: 3, color }}>
+            {p.name}
+            <div style={{ color: '#888899', marginTop: 2 }}>{p.zone_type?.replace(/_/g, ' ').toUpperCase()}</div>
+          </div>
+        </Tooltip>
+      </GeoJSON>
+    )
+  })
+}
+
+function makeArrowIcon(color, heading, size = 10) {
+  const h = heading ?? 0
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:${size}px;height:${size}px;transform:rotate(${h}deg);display:flex;align-items:center;justify-content:center;font-size:${size}px;line-height:1;color:${color};filter:drop-shadow(0 0 3px ${color}88)">▲</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  })
+}
+
+function VesselsLayer({ vessels, onSelect }) {
+  if (!vessels?.length) return null
+  return vessels.map(v => {
+    if (!v.lat || !v.lng) return null
+    const icon = makeArrowIcon(_gc.vessel, v.heading, 9)
+    return (
+      <Marker key={v.mmsi} position={[v.lat, v.lng]} icon={icon}
+        eventHandlers={{ click: () => onSelect({ type: 'vessel', vessel: v }) }}
+      >
+        <Tooltip sticky direction="top" className="arc-tooltip" pane="tooltipPane">
+          <div style={{ fontFamily: 'monospace', fontSize: 10, background: '#0a0a0f', border: `1px solid ${_gc.vessel}`, padding: '4px 8px', borderRadius: 3, color: _gc.vessel }}>
+            {v.name || v.mmsi}
+            {v.speed_kts != null && <span style={{ color: '#666677', marginLeft: 6 }}>{v.speed_kts}kts</span>}
+            {v.destination && <div style={{ color: '#666677', marginTop: 2 }}>→ {v.destination}</div>}
+          </div>
+        </Tooltip>
+      </Marker>
+    )
+  })
+}
+
+function FlightsLayer({ flights, onSelect }) {
+  if (!flights?.length) return null
+  return flights.map(f => {
+    if (!f.lat || !f.lng) return null
+    const icon = makeArrowIcon(_gc.flight, f.heading, 9)
+    return (
+      <Marker key={f.icao24} position={[f.lat, f.lng]} icon={icon}
+        eventHandlers={{ click: () => onSelect({ type: 'flight', flight: f }) }}
+      >
+        <Tooltip sticky direction="top" className="arc-tooltip" pane="tooltipPane">
+          <div style={{ fontFamily: 'monospace', fontSize: 10, background: '#0a0a0f', border: `1px solid ${_gc.flight}`, padding: '4px 8px', borderRadius: 3, color: _gc.flight }}>
+            {f.callsign}
+            <span style={{ color: '#666677', marginLeft: 6 }}>{f.country}</span>
+            {f.altitude_ft != null && <div style={{ color: '#666677', marginTop: 2 }}>{f.altitude_ft.toLocaleString()}ft · {f.speed_kts}kts</div>}
+          </div>
+        </Tooltip>
+      </Marker>
+    )
+  })
+}
+
 // ─── Layer control panel ──────────────────────────────────────────────────────
 
 const LAYER_DEFS = [
@@ -533,6 +624,9 @@ const LAYER_DEFS = [
   { key: 'energy', label: 'ENERGY', color: '#ff9500' },
   { key: 'mining', label: 'MINING', color: '#5b8db8' },
   { key: 'agriculture', label: 'AGRI', color: '#a8c240' },
+  { key: 'vessels', label: 'VESSELS', color: '#00aaff' },
+  { key: 'flights', label: 'FLIGHTS', color: '#ffcc00' },
+  { key: 'zones', label: 'ZONES', color: '#ff3b3b' },
 ]
 
 function LayerControls({
@@ -707,6 +801,84 @@ function ArcPanel({ selected, S }) {
   )
 }
 
+function ZonePanel({ selected, S }) {
+  const z = selected.zone
+  const color = zoneColor(z.zone_type)
+  const riskColors = { high: _gc.bearish, elevated: _gc.zoneRisk, low: _gc.neutral }
+  return (
+    <>
+      <div style={{ marginBottom: 12 }}>
+        <span style={S.tag(color)}>{z.zone_type?.replace(/_/g, ' ').toUpperCase()}</span>
+        <span style={{ ...S.tag(riskColors[z.risk_level] || '#888888'), marginLeft: 6 }}>
+          {z.risk_level?.toUpperCase()} RISK
+        </span>
+      </div>
+      <div style={S.section}>
+        <div style={{ color: '#ccccdd', lineHeight: 1.7 }}>{z.detail}</div>
+      </div>
+      {z.active_since && (
+        <div style={S.section}>
+          <div style={S.sectionTitle}>ACTIVE SINCE</div>
+          <div style={S.value}>{z.active_since}</div>
+        </div>
+      )}
+    </>
+  )
+}
+
+function VesselPanel({ selected, S }) {
+  const v = selected.vessel
+  const typeLabel = v.ship_type ? `Type ${v.ship_type}` : 'Unknown type'
+  return (
+    <>
+      <div style={{ marginBottom: 12 }}>
+        <span style={S.tag(_gc.vessel)}>VESSEL</span>
+        {v.flag && <span style={{ ...S.tag('#333344'), marginLeft: 6 }}>{v.flag}</span>}
+      </div>
+      <div style={S.section}>
+        <div style={S.sectionTitle}>DETAILS</div>
+        {v.mmsi && <div style={S.row}><span style={S.muted}>MMSI</span><span style={S.value}>{v.mmsi}</span></div>}
+        {v.callsign && <div style={S.row}><span style={S.muted}>Callsign</span><span style={S.value}>{v.callsign}</span></div>}
+        <div style={S.row}><span style={S.muted}>Type</span><span style={S.value}>{typeLabel}</span></div>
+        {v.speed_kts != null && <div style={S.row}><span style={S.muted}>Speed</span><span style={S.value}>{v.speed_kts} kts</span></div>}
+        {v.heading != null && <div style={S.row}><span style={S.muted}>Heading</span><span style={S.value}>{v.heading}°</span></div>}
+        {v.destination && <div style={S.row}><span style={S.muted}>Destination</span><span style={S.value}>{v.destination}</span></div>}
+      </div>
+      <div style={S.section}>
+        <div style={S.sectionTitle}>POSITION</div>
+        <div style={{ color: '#444455', fontFeatureSettings: '"tnum"' }}>
+          {v.lat?.toFixed(4)}°, {v.lng?.toFixed(4)}°
+        </div>
+      </div>
+    </>
+  )
+}
+
+function FlightPanel({ selected, S }) {
+  const f = selected.flight
+  return (
+    <>
+      <div style={{ marginBottom: 12 }}>
+        <span style={S.tag(_gc.flight)}>CARGO FLIGHT</span>
+        {f.country && <span style={{ ...S.tag('#333344'), marginLeft: 6 }}>{f.country}</span>}
+      </div>
+      <div style={S.section}>
+        <div style={S.sectionTitle}>DETAILS</div>
+        {f.icao24 && <div style={S.row}><span style={S.muted}>ICAO24</span><span style={S.value}>{f.icao24}</span></div>}
+        {f.altitude_ft != null && <div style={S.row}><span style={S.muted}>Altitude</span><span style={S.value}>{f.altitude_ft.toLocaleString()} ft</span></div>}
+        {f.speed_kts != null && <div style={S.row}><span style={S.muted}>Speed</span><span style={S.value}>{f.speed_kts} kts</span></div>}
+        {f.heading != null && <div style={S.row}><span style={S.muted}>Heading</span><span style={S.value}>{f.heading}°</span></div>}
+      </div>
+      <div style={S.section}>
+        <div style={S.sectionTitle}>POSITION</div>
+        <div style={{ color: '#444455', fontFeatureSettings: '"tnum"' }}>
+          {f.lat?.toFixed(4)}°, {f.lng?.toFixed(4)}°
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ─── Info panels ──────────────────────────────────────────────────────────────
 
 function InfoPanel({ selected, onClose }) {
@@ -768,6 +940,9 @@ function InfoPanel({ selected, onClose }) {
   const title = selected.type === 'route' ? selected.feature.properties.name
     : selected.type === 'infra' ? selected.feature.name
     : selected.type === 'arc' ? `${selected.fromLoc} → ${selected.infraName}`
+    : selected.type === 'zone' ? selected.zone.name
+    : selected.type === 'vessel' ? (selected.vessel.name || selected.vessel.mmsi)
+    : selected.type === 'flight' ? selected.flight.callsign
     : selected.location
 
   return (
@@ -781,6 +956,9 @@ function InfoPanel({ selected, onClose }) {
         {selected.type === 'infra' && <InfraPanel selected={selected} S={S} />}
         {selected.type === 'news' && <NewsDotPanel selected={selected} S={S} />}
         {selected.type === 'arc' && <ArcPanel selected={selected} S={S} />}
+        {selected.type === 'zone' && <ZonePanel selected={selected} S={S} />}
+        {selected.type === 'vessel' && <VesselPanel selected={selected} S={S} />}
+        {selected.type === 'flight' && <FlightPanel selected={selected} S={S} />}
       </div>
     </div>
   )
@@ -1027,6 +1205,7 @@ export default function Globe() {
   const [layers, setLayers] = useState({
     news: true, arcs: true, routes: true,
     energy: true, mining: true, agriculture: true,
+    vessels: true, flights: true, zones: true,
   })
   const [hoursWindow, setHoursWindow] = useState(48)
   const [influenceMin, setInfluenceMin] = useState(3)
@@ -1034,6 +1213,9 @@ export default function Globe() {
   const [lastUpdated, setLastUpdated] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshStatus, setRefreshStatus] = useState('')
+  const [flights, setFlights] = useState([])
+  const [vessels, setVessels] = useState([])
+  const [zones, setZones] = useState([])
   const pollRef = useRef(null)
 
   // Sync colors each render
@@ -1045,6 +1227,12 @@ export default function Globe() {
   _gc.routeElevated = settings?.color_globe_route_elevated || '#ff6b00'
   _gc.routeHigh = settings?.color_globe_route_high_risk || '#ff3b3b'
   _gc.arcGeo = settings?.color_globe_arc_geo || '#445566'
+  _gc.vessel = settings?.color_globe_vessel || '#00aaff'
+  _gc.flight = settings?.color_globe_flight || '#ffcc00'
+  _gc.zoneConflict = settings?.color_globe_zone_conflict || '#ff3b3b'
+  _gc.zoneRisk = settings?.color_globe_zone_risk || '#ff6b00'
+  _gc.zoneRestricted = settings?.color_globe_zone_restricted || '#aa44ff'
+  _gc.zoneSanctioned = settings?.color_globe_zone_sanctioned || '#ff44aa'
 
   useEffect(() => {
     api.getSettings().then(setSettings).catch(() => {})
@@ -1060,7 +1248,22 @@ export default function Globe() {
       .then(r => r.json())
       .then(setWorldGeoJSON)
       .catch(() => {})
-    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+
+    // Load static zones
+    import('../data/restricted_zones.json').then(m => setZones(m.default?.features || [])).catch(() => {})
+
+    // Live tracking — initial fetch + 60s poll
+    const fetchTracking = () => {
+      api.getFlights().then(d => setFlights(d.flights || [])).catch(() => {})
+      api.getVessels().then(d => setVessels(d.vessels || [])).catch(() => {})
+    }
+    fetchTracking()
+    const trackingInterval = setInterval(fetchTracking, 60000)
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current)
+      clearInterval(trackingInterval)
+    }
   }, [])
 
   const filteredArticles = useMemo(() => {
@@ -1168,6 +1371,10 @@ export default function Globe() {
               onSelect={setSelected}
             />
           )}
+
+          {layers.zones && <ZonesLayer zones={zones} onSelect={setSelected} />}
+          {layers.vessels && <VesselsLayer vessels={vessels} onSelect={setSelected} />}
+          {layers.flights && <FlightsLayer flights={flights} onSelect={setSelected} />}
         </MapContainer>
 
         <LayerControls
