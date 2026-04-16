@@ -534,33 +534,13 @@ function zoneColor(zone_type) {
   return '#888888'
 }
 
-function ZonesLayer({ zones, onSelect }) {
-  if (!zones?.length) return null
-  return zones.map(f => {
-    const p = f.properties
-    const color = zoneColor(p.zone_type)
-    return (
-      <GeoJSON
-        key={p.id}
-        data={f}
-        style={{
-          color, weight: 1, opacity: 0.6,
-          fillColor: color, fillOpacity: p.risk_level === 'high' ? 0.12 : 0.06,
-          dashArray: '4 4',
-        }}
-        eventHandlers={{
-          click: () => onSelect({ type: 'zone', zone: p }),
-        }}
-      >
-        <Tooltip sticky direction="top" className="arc-tooltip" pane="tooltipPane">
-          <div style={{ fontFamily: 'monospace', fontSize: 10, background: '#0a0a0f', border: `1px solid ${color}`, padding: '4px 8px', borderRadius: 3, color }}>
-            {p.name}
-            <div style={{ color: '#888899', marginTop: 2 }}>{p.zone_type?.replace(/_/g, ' ').toUpperCase()}</div>
-          </div>
-        </Tooltip>
-      </GeoJSON>
-    )
-  })
+function makeDensitySubset(arr, density) {
+  if (!arr?.length) return []
+  const keep = Math.max(1, Math.round(arr.length * density / 100))
+  if (keep >= arr.length) return arr
+  // Spatial thinning: pick evenly spaced indices so geographic spread is preserved
+  const step = arr.length / keep
+  return Array.from({ length: keep }, (_, i) => arr[Math.round(i * step)])
 }
 
 function makeArrowIcon(color, heading, size = 10) {
@@ -573,11 +553,13 @@ function makeArrowIcon(color, heading, size = 10) {
   })
 }
 
-function VesselsLayer({ vessels, onSelect }) {
-  if (!vessels?.length) return null
-  return vessels.map(v => {
+function VesselsLayer({ vessels, density, onSelect, selectedMmsi }) {
+  const subset = useMemo(() => makeDensitySubset(vessels, density), [vessels, density])
+  return subset.map(v => {
     if (!v.lat || !v.lng) return null
-    const icon = makeArrowIcon(_gc.vessel, v.heading, 9)
+    const isSelected = v.mmsi === selectedMmsi
+    const color = isSelected ? '#ffffff' : _gc.vessel
+    const icon = makeArrowIcon(color, v.heading, isSelected ? 12 : 9)
     return (
       <Marker key={v.mmsi} position={[v.lat, v.lng]} icon={icon}
         eventHandlers={{ click: () => onSelect({ type: 'vessel', vessel: v }) }}
@@ -594,11 +576,13 @@ function VesselsLayer({ vessels, onSelect }) {
   })
 }
 
-function FlightsLayer({ flights, onSelect }) {
-  if (!flights?.length) return null
-  return flights.map(f => {
+function FlightsLayer({ flights, density, onSelect, selectedIcao }) {
+  const subset = useMemo(() => makeDensitySubset(flights, density), [flights, density])
+  return subset.map(f => {
     if (!f.lat || !f.lng) return null
-    const icon = makeArrowIcon(_gc.flight, f.heading, 9)
+    const isSelected = f.icao24 === selectedIcao
+    const color = isSelected ? '#ffffff' : _gc.flight
+    const icon = makeArrowIcon(color, f.heading, isSelected ? 12 : 9)
     return (
       <Marker key={f.icao24} position={[f.lat, f.lng]} icon={icon}
         eventHandlers={{ click: () => onSelect({ type: 'flight', flight: f }) }}
@@ -606,6 +590,7 @@ function FlightsLayer({ flights, onSelect }) {
         <Tooltip sticky direction="top" className="arc-tooltip" pane="tooltipPane">
           <div style={{ fontFamily: 'monospace', fontSize: 10, background: '#0a0a0f', border: `1px solid ${_gc.flight}`, padding: '4px 8px', borderRadius: 3, color: _gc.flight }}>
             {f.callsign}
+            {f.is_cargo && <span style={{ color: '#888844', marginLeft: 6 }}>CARGO</span>}
             <span style={{ color: '#666677', marginLeft: 6 }}>{f.country}</span>
             {f.altitude_ft != null && <div style={{ color: '#666677', marginTop: 2 }}>{f.altitude_ft.toLocaleString()}ft · {f.speed_kts}kts</div>}
           </div>
@@ -626,12 +611,12 @@ const LAYER_DEFS = [
   { key: 'agriculture', label: 'AGRI', color: '#a8c240' },
   { key: 'vessels', label: 'VESSELS', color: '#00aaff' },
   { key: 'flights', label: 'FLIGHTS', color: '#ffcc00' },
-  { key: 'zones', label: 'ZONES', color: '#ff3b3b' },
 ]
 
 function LayerControls({
   layers, onToggle, hoursWindow, onHoursChange,
   influenceMin, onInfluenceChange,
+  trackingDensity, onDensityChange,
   infraCount, lastUpdated, refreshing, refreshStatus, onRefresh,
 }) {
   const S = {
@@ -689,6 +674,15 @@ function LayerControls({
           type="range" min={1} max={10} value={influenceMin}
           onChange={e => onInfluenceChange(Number(e.target.value))}
           style={{ width: '100%', accentColor: '#00ff40', cursor: 'pointer' }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 8 }}>
+        <div style={S.muted}>TRAFFIC DENSITY {trackingDensity}%</div>
+        <input
+          type="range" min={5} max={100} step={5} value={trackingDensity}
+          onChange={e => onDensityChange(Number(e.target.value))}
+          style={{ width: '100%', accentColor: '#00aaff', cursor: 'pointer' }}
         />
       </div>
 
@@ -1205,7 +1199,7 @@ export default function Globe() {
   const [layers, setLayers] = useState({
     news: true, arcs: true, routes: true,
     energy: true, mining: true, agriculture: true,
-    vessels: true, flights: true, zones: true,
+    vessels: true, flights: true,
   })
   const [hoursWindow, setHoursWindow] = useState(48)
   const [influenceMin, setInfluenceMin] = useState(3)
@@ -1215,7 +1209,8 @@ export default function Globe() {
   const [refreshStatus, setRefreshStatus] = useState('')
   const [flights, setFlights] = useState([])
   const [vessels, setVessels] = useState([])
-  const [zones, setZones] = useState([])
+  const [trackingDensity, setTrackingDensity] = useState(60)
+  const [selectedTrail, setSelectedTrail] = useState([])
   const pollRef = useRef(null)
 
   // Sync colors each render
@@ -1229,10 +1224,6 @@ export default function Globe() {
   _gc.arcGeo = settings?.color_globe_arc_geo || '#445566'
   _gc.vessel = settings?.color_globe_vessel || '#00aaff'
   _gc.flight = settings?.color_globe_flight || '#ffcc00'
-  _gc.zoneConflict = settings?.color_globe_zone_conflict || '#ff3b3b'
-  _gc.zoneRisk = settings?.color_globe_zone_risk || '#ff6b00'
-  _gc.zoneRestricted = settings?.color_globe_zone_restricted || '#aa44ff'
-  _gc.zoneSanctioned = settings?.color_globe_zone_sanctioned || '#ff44aa'
 
   useEffect(() => {
     api.getSettings().then(setSettings).catch(() => {})
@@ -1249,8 +1240,7 @@ export default function Globe() {
       .then(setWorldGeoJSON)
       .catch(() => {})
 
-    // Load static zones
-    import('../data/restricted_zones.json').then(m => setZones(m.default?.features || [])).catch(() => {})
+    // Clear trail when nothing selected
 
     // Live tracking — initial fetch + 60s poll
     const fetchTracking = () => {
@@ -1314,6 +1304,20 @@ export default function Globe() {
     setLayers(prev => ({ ...prev, [key]: !prev[key] }))
   }, [])
 
+  const handleSelect = useCallback((item) => {
+    setSelected(item)
+    setSelectedTrail([])
+    if (item?.type === 'vessel' && item.vessel?.mmsi) {
+      api.getVesselHistory(item.vessel.mmsi)
+        .then(d => setSelectedTrail((d.history || []).map(h => [h.lat, h.lng])))
+        .catch(() => {})
+    } else if (item?.type === 'flight' && item.flight?.icao24) {
+      api.getFlightHistory(item.flight.icao24)
+        .then(d => setSelectedTrail((d.history || []).map(h => [h.lat, h.lng])))
+        .catch(() => {})
+    }
+  }, [])
+
   return (
     <div style={{ display: 'flex', height: '100%', background: '#000', overflow: 'hidden' }}>
       <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
@@ -1372,9 +1376,34 @@ export default function Globe() {
             />
           )}
 
-          {layers.zones && <ZonesLayer zones={zones} onSelect={setSelected} />}
-          {layers.vessels && <VesselsLayer vessels={vessels} onSelect={setSelected} />}
-          {layers.flights && <FlightsLayer flights={flights} onSelect={setSelected} />}
+          {layers.vessels && (
+            <VesselsLayer
+              vessels={vessels}
+              density={trackingDensity}
+              onSelect={handleSelect}
+              selectedMmsi={selected?.type === 'vessel' ? selected.vessel?.mmsi : null}
+            />
+          )}
+          {layers.flights && (
+            <FlightsLayer
+              flights={flights}
+              density={trackingDensity}
+              onSelect={handleSelect}
+              selectedIcao={selected?.type === 'flight' ? selected.flight?.icao24 : null}
+            />
+          )}
+          {selectedTrail.length > 1 && (
+            <Polyline
+              positions={selectedTrail}
+              pathOptions={{
+                color: selected?.type === 'vessel' ? _gc.vessel : _gc.flight,
+                weight: 1.5,
+                opacity: 0.5,
+                dashArray: '3 5',
+                interactive: false,
+              }}
+            />
+          )}
         </MapContainer>
 
         <LayerControls
@@ -1384,6 +1413,8 @@ export default function Globe() {
           onHoursChange={setHoursWindow}
           influenceMin={influenceMin}
           onInfluenceChange={setInfluenceMin}
+          trackingDensity={trackingDensity}
+          onDensityChange={setTrackingDensity}
           infraCount={infrastructure.length}
           lastUpdated={lastUpdated}
           refreshing={refreshing}

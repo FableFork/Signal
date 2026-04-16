@@ -71,6 +71,8 @@ export const api = {
   getFlights: () => req('/globe/flights'),
   getVessels: () => req('/globe/vessels'),
   startTracking: () => req('/globe/tracking/start', { method: 'POST' }),
+  getVesselHistory: (mmsi) => req(`/globe/vessels/${encodeURIComponent(mmsi)}/history`),
+  getFlightHistory: (icao24) => req(`/globe/flights/${encodeURIComponent(icao24)}/history`),
 
   // Data
   purgeData: () => req('/data/purge', { method: 'POST' }),

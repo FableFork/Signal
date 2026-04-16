@@ -16,7 +16,11 @@ from database import (
     purge_old_articles,
 )
 from infrastructure_fetcher import run_infrastructure_refresh
-from globe_tracker import refresh_flights, start_ais_stream, get_flights_data, get_vessels_data
+from globe_tracker import (
+    refresh_flights, start_ais_stream,
+    get_flights_data, get_vessels_data,
+    get_flight_history, get_vessel_history,
+)
 from websocket_manager import ws_manager
 from news_fetcher import run_fetch_cycle, get_article_body_full, _is_blocked
 from ai_analyzer import analyze_article
@@ -496,6 +500,16 @@ async def start_tracking():
     if ais_key:
         await start_ais_stream(ais_key)
     return {"ok": True}
+
+
+@app.get("/api/globe/vessels/{mmsi}/history")
+async def vessel_history(mmsi: str):
+    return {"history": await get_vessel_history(mmsi)}
+
+
+@app.get("/api/globe/flights/{icao24}/history")
+async def flight_history(icao24: str):
+    return {"history": await get_flight_history(icao24)}
 
 
 # ─── Settings ─────────────────────────────────────────────────────────────────

@@ -110,6 +110,30 @@ CREATE TABLE IF NOT EXISTS infrastructure_features (
 
 CREATE INDEX IF NOT EXISTS idx_infra_feature_type ON infrastructure_features(feature_type);
 CREATE INDEX IF NOT EXISTS idx_infra_influence ON infrastructure_features(influence);
+
+CREATE TABLE IF NOT EXISTS vessel_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mmsi TEXT NOT NULL,
+    lat REAL,
+    lng REAL,
+    heading REAL,
+    speed_kts REAL,
+    recorded_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_vessel_history ON vessel_history(mmsi, recorded_at);
+
+CREATE TABLE IF NOT EXISTS flight_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    icao24 TEXT NOT NULL,
+    callsign TEXT,
+    lat REAL,
+    lng REAL,
+    heading REAL,
+    altitude_ft INTEGER,
+    speed_kts INTEGER,
+    recorded_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_flight_history ON flight_history(icao24, recorded_at);
 """
 
 # Defaults applied to each new user
@@ -152,10 +176,6 @@ USER_SETTING_DEFAULTS = {
     "color_globe_arc_geo": "#445566",
     "color_globe_vessel": "#00aaff",
     "color_globe_flight": "#ffcc00",
-    "color_globe_zone_conflict": "#ff3b3b",
-    "color_globe_zone_risk": "#ff6b00",
-    "color_globe_zone_restricted": "#aa44ff",
-    "color_globe_zone_sanctioned": "#ff44aa",
     "article_system_prompt": """You are SIGNAL, a trading intelligence system. Analyze the provided news article and determine its market implications.
 Trace causality chains from the news event to affected instruments and industries. Examples:
 Iran/Hormuz/Middle East → Oil, Gold, Energy stocks, Shipping

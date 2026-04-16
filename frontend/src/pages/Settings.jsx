@@ -378,10 +378,6 @@ export default function Settings() {
               ['color_globe_arc_geo', 'Arc — Geo Connection'],
               ['color_globe_vessel', 'Vessel Markers'],
               ['color_globe_flight', 'Flight Markers'],
-              ['color_globe_zone_conflict', 'Zone — Conflict'],
-              ['color_globe_zone_risk', 'Zone — Maritime Risk'],
-              ['color_globe_zone_restricted', 'Zone — Restricted Airspace'],
-              ['color_globe_zone_sanctioned', 'Zone — Sanctioned'],
             ].map(([key, label]) => (
               <ColorPicker key={key} label={label} value={local[key] || '#000000'}
                 onChange={(v) => set(key, v)} />
