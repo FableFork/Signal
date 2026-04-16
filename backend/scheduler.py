@@ -6,7 +6,7 @@ from database import get_system_setting, get_all_user_ids
 from news_fetcher import run_fetch_cycle
 from daily_digest import generate_digest
 from infrastructure_fetcher import run_infrastructure_refresh
-from globe_tracker import refresh_flights
+from globe_tracker import refresh_flights, refresh_vessels
 
 scheduler = AsyncIOScheduler()
 
@@ -73,13 +73,14 @@ async def start_scheduler():
         max_instances=1,
     )
 
-    # Flight positions — refresh every 60 seconds
-    scheduler.add_job(
-        refresh_flights,
-        IntervalTrigger(seconds=60),
-        id="flight_refresh",
-        replace_existing=True,
-        coalesce=True,
-        max_instances=1,
-        misfire_grace_time=30,
-    )
+    # Flights + vessels — refresh every 15 minutes
+    for job_id, fn in [("flight_refresh", refresh_flights), ("vessel_refresh", refresh_vessels)]:
+        scheduler.add_job(
+            fn,
+            IntervalTrigger(seconds=900),
+            id=job_id,
+            replace_existing=True,
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=60,
+        )

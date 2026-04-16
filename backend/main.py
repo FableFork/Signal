@@ -17,7 +17,7 @@ from database import (
 )
 from infrastructure_fetcher import run_infrastructure_refresh
 from globe_tracker import (
-    refresh_flights, start_ais_stream,
+    refresh_flights, refresh_vessels, set_ais_key,
     get_flights_data, get_vessels_data,
     get_flight_history, get_vessel_history,
 )
@@ -45,12 +45,12 @@ async def lifespan(app: FastAPI):
             count = (await cur.fetchone())[0]
     if count == 0:
         asyncio.create_task(run_infrastructure_refresh())
-    # Start flight tracking (no key needed)
-    asyncio.create_task(refresh_flights())
-    # Start AIS vessel stream if key is configured
+    # Seed API key into tracker then fire initial fetches
     ais_key = await get_user_setting(UID, "aisstream_api_key")
     if ais_key:
-        await start_ais_stream(ais_key)
+        set_ais_key(ais_key)
+    asyncio.create_task(refresh_flights())
+    asyncio.create_task(refresh_vessels())
     yield
 
 
@@ -494,11 +494,12 @@ async def get_vessels():
 
 @app.post("/api/globe/tracking/start")
 async def start_tracking():
-    """Re-initialise tracking streams (called after saving AIS key in settings)."""
-    asyncio.create_task(refresh_flights())
+    """Re-seed AIS key and trigger immediate refresh (called after saving key in settings)."""
     ais_key = await get_user_setting(UID, "aisstream_api_key")
     if ais_key:
-        await start_ais_stream(ais_key)
+        set_ais_key(ais_key)
+    asyncio.create_task(refresh_flights())
+    asyncio.create_task(refresh_vessels())
     return {"ok": True}
 
 

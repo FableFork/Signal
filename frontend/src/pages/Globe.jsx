@@ -543,25 +543,20 @@ function makeDensitySubset(arr, density) {
   return Array.from({ length: keep }, (_, i) => arr[Math.round(i * step)])
 }
 
-function makeArrowIcon(color, heading, size = 10) {
-  const h = heading ?? 0
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:${size}px;height:${size}px;transform:rotate(${h}deg);display:flex;align-items:center;justify-content:center;font-size:${size}px;line-height:1;color:${color};filter:drop-shadow(0 0 3px ${color}88)">▲</div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  })
-}
-
+// CircleMarker is SVG-rendered — no DOM node per marker, orders of magnitude
+// faster than DivIcon when rendering hundreds of vessels/flights.
 function VesselsLayer({ vessels, density, onSelect, selectedMmsi }) {
   const subset = useMemo(() => makeDensitySubset(vessels, density), [vessels, density])
   return subset.map(v => {
     if (!v.lat || !v.lng) return null
     const isSelected = v.mmsi === selectedMmsi
     const color = isSelected ? '#ffffff' : _gc.vessel
-    const icon = makeArrowIcon(color, v.heading, isSelected ? 12 : 9)
     return (
-      <Marker key={v.mmsi} position={[v.lat, v.lng]} icon={icon}
+      <CircleMarker
+        key={v.mmsi}
+        center={[v.lat, v.lng]}
+        radius={isSelected ? 5 : 3}
+        pathOptions={{ color, fillColor: color, fillOpacity: 0.85, weight: isSelected ? 2 : 1 }}
         eventHandlers={{ click: () => onSelect({ type: 'vessel', vessel: v }) }}
       >
         <Tooltip sticky direction="top" className="arc-tooltip" pane="tooltipPane">
@@ -571,7 +566,7 @@ function VesselsLayer({ vessels, density, onSelect, selectedMmsi }) {
             {v.destination && <div style={{ color: '#666677', marginTop: 2 }}>→ {v.destination}</div>}
           </div>
         </Tooltip>
-      </Marker>
+      </CircleMarker>
     )
   })
 }
@@ -581,21 +576,24 @@ function FlightsLayer({ flights, density, onSelect, selectedIcao }) {
   return subset.map(f => {
     if (!f.lat || !f.lng) return null
     const isSelected = f.icao24 === selectedIcao
-    const color = isSelected ? '#ffffff' : _gc.flight
-    const icon = makeArrowIcon(color, f.heading, isSelected ? 12 : 9)
+    const color = isSelected ? '#ffffff' : (f.is_cargo ? '#ffaa00' : _gc.flight)
     return (
-      <Marker key={f.icao24} position={[f.lat, f.lng]} icon={icon}
+      <CircleMarker
+        key={f.icao24}
+        center={[f.lat, f.lng]}
+        radius={isSelected ? 5 : 3}
+        pathOptions={{ color, fillColor: color, fillOpacity: 0.85, weight: isSelected ? 2 : 1 }}
         eventHandlers={{ click: () => onSelect({ type: 'flight', flight: f }) }}
       >
         <Tooltip sticky direction="top" className="arc-tooltip" pane="tooltipPane">
           <div style={{ fontFamily: 'monospace', fontSize: 10, background: '#0a0a0f', border: `1px solid ${_gc.flight}`, padding: '4px 8px', borderRadius: 3, color: _gc.flight }}>
             {f.callsign}
-            {f.is_cargo && <span style={{ color: '#888844', marginLeft: 6 }}>CARGO</span>}
+            {f.is_cargo && <span style={{ color: '#ffaa00', marginLeft: 6 }}>CARGO</span>}
             <span style={{ color: '#666677', marginLeft: 6 }}>{f.country}</span>
             {f.altitude_ft != null && <div style={{ color: '#666677', marginTop: 2 }}>{f.altitude_ft.toLocaleString()}ft · {f.speed_kts}kts</div>}
           </div>
         </Tooltip>
-      </Marker>
+      </CircleMarker>
     )
   })
 }
@@ -1248,7 +1246,7 @@ export default function Globe() {
       api.getVessels().then(d => setVessels(d.vessels || [])).catch(() => {})
     }
     fetchTracking()
-    const trackingInterval = setInterval(fetchTracking, 60000)
+    const trackingInterval = setInterval(fetchTracking, 900000) // 15 min
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current)
