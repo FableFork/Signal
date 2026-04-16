@@ -356,7 +356,7 @@ function ArcsLayer({ articles, fromCoords, fromName, infrastructure, influenceMi
         seenGeo.add(geoKey)
         geoArcs.push({
           path: bezierArcPath(fromCoords, locCoords),
-          color: '#445566',
+          color: _gc.arcGeo,
           weight: 1,
           opacity: 0.5,
           key: `geo-${article.id}-${loc.name}`,
@@ -1044,6 +1044,7 @@ export default function Globe() {
   _gc.routeNormal = settings?.color_globe_route_normal || '#00ff88'
   _gc.routeElevated = settings?.color_globe_route_elevated || '#ff6b00'
   _gc.routeHigh = settings?.color_globe_route_high_risk || '#ff3b3b'
+  _gc.arcGeo = settings?.color_globe_arc_geo || '#445566'
 
   useEffect(() => {
     api.getSettings().then(setSettings).catch(() => {})

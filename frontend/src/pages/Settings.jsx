@@ -347,6 +347,7 @@ export default function Settings() {
               ['color_globe_route_normal', 'Route — Normal'],
               ['color_globe_route_elevated', 'Route — Elevated'],
               ['color_globe_route_high_risk', 'Route — High Risk'],
+              ['color_globe_arc_geo', 'Arc — Geo Connection'],
             ].map(([key, label]) => (
               <ColorPicker key={key} label={label} value={local[key] || '#000000'}
                 onChange={(v) => set(key, v)} />
