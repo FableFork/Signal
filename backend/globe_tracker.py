@@ -194,10 +194,7 @@ async def _ais_snapshot(bboxes: list) -> dict:
                     lng = meta.get("longitude")
                     if not lat or not lng:
                         continue
-                    # Require moving vessels — filter out anchored/stationary (SOG < 0.5 kts)
                     sog = pos.get("Sog") or 0
-                    if sog < 0.3:
-                        continue
                     existing = _vessels.get(mmsi, {})
                     snapshot[mmsi] = {
                         "mmsi": mmsi,
